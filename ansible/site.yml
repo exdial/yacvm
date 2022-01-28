@@ -1,6 +1,6 @@
 ---
 - hosts: all
-  gather_facts: no
+  gather_facts: false
   tasks:
     - name: 🐍 Ensure Python is present
       raw: >
@@ -9,8 +9,8 @@
         sudo apt-get -yq install python-simplejson
 
 - hosts: all
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
   vars:
     # Generate an idempotent random port number in the range 1024-65535
     - openvpn_port: "{{ 65535 | random(1024, seed=client_file_name) }}"
@@ -40,11 +40,11 @@
         name: "{{ item.name }}"
         state: "{{ item.state }}"
         purge: "{{ item.purge | default(omit) }}"
-        update_cache: yes
+        update_cache: true
       loop:
-        - { name: resolvconf, state: absent, purge: yes }
-        - { name: openvpn, state: present }
-        - { name: easy-rsa, state: present }
+        - {name: resolvconf, state: absent, purge: true}
+        - {name: openvpn, state: present}
+        - {name: easy-rsa, state: present}
     - name: ⚙️  Provide openvpn user
       user: name=openvpn shell=/bin/bash home=/etc/openvpn system=yes
     - name: ⚙️  Ensure openvpn directories exist
@@ -101,7 +101,7 @@
           export KEY_PROVINCE="XX"
           export KEY_CITY="Racoon"
           export KEY_ORG="Acme"
-          export KEY_EMAIL="mail@acme.tld"          
+          export KEY_EMAIL="mail@acme.tld"
         dest: /usr/share/easy-rsa/vars
     - name: 📁 Generate openvpn server config
       copy:
@@ -129,7 +129,7 @@
           tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
           user openvpn
           group openvpn
-          verb 0          
+          verb 0
         dest: /etc/openvpn/server.conf
       notify: start openvpn
     - name: 📁 Check server builder
@@ -144,7 +144,7 @@
           openvpn --genkey --secret /etc/openvpn/keys/ta.key
           /usr/bin/openssl dhparam -out ${KEY_DIR}/dh${KEY_SIZE}.pem ${KEY_SIZE}
           /usr/share/easy-rsa/pkitool --initca
-          /usr/share/easy-rsa/pkitool --server server          
+          /usr/share/easy-rsa/pkitool --server server
         dest: /usr/share/easy-rsa/build-server-keys
         mode: 0755
       notify: build server keys
@@ -160,7 +160,7 @@
             content: |
               #!/bin/bash
               source /usr/share/easy-rsa/vars
-              /usr/share/easy-rsa/pkitool $1              
+              /usr/share/easy-rsa/pkitool $1
             dest: /usr/share/easy-rsa/build-client-keys
             mode: 0755
           when: cbuilder.stat.exists == False
@@ -194,7 +194,7 @@
               <key>
               </key>
               <tls-auth>
-              </tls-auth>              
+              </tls-auth>
             dest: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
 
         - name: 📩 Get ca.crt
@@ -250,7 +250,7 @@
           fetch:
             src: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
             dest: ./{{ clientname }}-{{ client_file_name }}
-            flat: yes
+            flat: true
 
         - name: ⚙️  Cleanup remote client configs
           file:
