@@ -1,6 +1,6 @@
 
-# Created by https://gitignore.io/api/linux,osx,vim,ansible,terraform
-# Edit at https://gitignore.io/?templates=linux,osx,vim,ansible,terraform
+# Created by https://gitignore.io/api/linux,osx,vim,ansible,terraform,vagrant
+# Edit at https://gitignore.io?templates=linux,osx,vim,ansible,terraform,vagrant
 
 ### Ansible ###
 *.retry
@@ -84,6 +84,16 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+### Vagrant ###
+# General
+.vagrant/
+
+# Log files (if you are creating logs in debug mode, uncomment this)
+ansible/*.log
+
+### Vagrant Patch ###
+*.box
+
 ### Vim ###
 # Swap
 [._]*.s[a-v][a-z]
@@ -104,4 +114,4 @@ tags
 # Persistent undo
 [._]*.un~
 
-# End of https://gitignore.io/api/linux,osx,vim,ansible,terraform
+# End of https://www.toptal.com/developers/gitignore/api/linux,osx,vim,ansible,terraform,vagrant

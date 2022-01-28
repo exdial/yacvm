@@ -1,4 +1,4 @@
-[![CI](https://github.com/repconn/holtzman-effect/actions/workflows/ci.yml/badge.svg)](https://github.com/repconn/holtzman effect/actions/workflows/ci.yml)
+[![CI](https://github.com/repconn/holtzman-effect/actions/workflows/ci.yml/badge.svg)](https://github.com/repconn/holtzman-effect/actions/workflows/ci.yml)
 
 ```
 ██╗  ██╗ ██████╗ ██╗  ████████╗███████╗███╗   ███╗ █████╗ ███╗   ██╗

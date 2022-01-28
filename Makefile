@@ -1,3 +1,20 @@
+clean: ## Stop tests and delete all files produced by the Holtzman effect
+	cd $(CWD)/ansible && vagrant destroy -f
+	rm -f $(CWD)/ansible/ubuntu-bionic-18.04-cloudimg-console.log
+	rm -rf $(CWD)/ansible/.vagrant
+
+check: ## Check all requirements are met
+	@echo "Checking requirements..."
+	@command -v docker > /dev/null 2>&1 || \
+		(echo "❌ ERROR: Docker is required. \nVisit https://docs.docker.com/get-docker/"; exit 1)
+	@command -v vagrant > /dev/null 2>&1 || \
+		(echo "❌ ERROR: Vagrant is required. \nVisit https://www.vagrantup.com/"; exit 1)
+	@echo "✅ Done..."
+
+test: ## Run tests
+	@clear && head -n 16 README.md | tail -n13 && echo
+	@cd $(CWD)/ansible && vagrant up
+
 linux: ## Linux
 	@echo linux
 
@@ -9,6 +26,7 @@ wrong-platform:
 
 
 UNAME := $(shell uname)
+CWD   := $(shell pwd)
 
 ifeq ($(UNAME), Linux)
   TARGET = linux
