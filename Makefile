@@ -1,7 +1,6 @@
-clean: ## Stop tests and delete all files produced by the Holtzman effect
-	cd $(CWD)/ansible && vagrant destroy -f
-	rm -f $(CWD)/ansible/ubuntu-bionic-18.04-cloudimg-console.log
-	rm -rf $(CWD)/ansible/.vagrant
+docker-build: ## Build docker image
+	@clear && head -n 16 README.md | tail -n13 && echo
+	@docker build -t holtzman-effect . -f Dockerfile
 
 check: ## Check all requirements are met
 	@echo "Checking requirements..."
@@ -14,6 +13,11 @@ check: ## Check all requirements are met
 test: ## Run tests
 	@clear && head -n 16 README.md | tail -n13 && echo
 	@cd $(CWD)/ansible && vagrant up
+
+clean: ## Stop tests and delete all files produced by the Holtzman effect
+	cd $(CWD)/ansible && vagrant destroy -f
+	rm -f $(CWD)/ansible/ubuntu-bionic-18.04-cloudimg-console.log
+	rm -rf $(CWD)/ansible/.vagrant
 
 linux: ## Linux
 	@echo linux
