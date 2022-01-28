@@ -33,6 +33,7 @@ clean: ## Stop tests and delete all files produced by the Holtzman effect
 	cd $(CWD)/ansible && vagrant destroy -f
 	rm -f $(CWD)/ansible/ubuntu-bionic-18.04-cloudimg-console.log
 	rm -rf $(CWD)/ansible/.vagrant
+	cd $(CWD)/terraform && rm _setup.tf _backend.tf
 
 linux:
 	@echo linux
