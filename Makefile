@@ -4,10 +4,10 @@ docker-build: ## Build docker image
 
 plan: ## Perform terragrunt plan
 	@clear && head -n 16 README.md | tail -n13 && echo
-	@read -p "AWS profile: " PROFILE; \
+	@read -p "AWS profile [default]: " PROFILE; \
 	 echo "You have choosen the profile \"$$PROFILE\""; \
 	 sed -i.bak s/aws_profile.*/aws_profile\ =\ \"$$PROFILE\"/ terraform/inputs.hcl
-	@read -p "AWS region: " REGION; \
+	@read -p "AWS region [us-east-1]: " REGION; \
 	 echo "You have choosen the region \"$$REGION\"" ; \
 	 sed -i.bak s/aws_region.*/aws_region\ =\ \"$$REGION\"/ terraform/inputs.hcl
 	@echo "🔨 Starting terraforming process"
