@@ -15,15 +15,15 @@ repos:
       - id: ansible-lint
 
   - repo: local
-      hooks:
-        - id: terraform-fmt
-          name: Terraform fmt
-          description: Reformat configuration in the standard style
-          entry: .hooks/terraform-fmt.sh
-          language: script
-          files: (\.tf|\.tfvars)$
-          exclude: >
-            (?x)^(
-              .+\.terraform/\.*$
-            )$
-          require_serial: true
+    hooks:
+      - id: terraform-fmt
+        name: Terraform fmt
+        description: Reformat configuration in the standard style
+        entry: .hooks/terraform-fmt.sh
+        language: script
+        files: (\.tf|\.tfvars)$
+        exclude: >
+          (?x)^(
+            .+\.terraform/\.*$
+          )$
+        require_serial: true
