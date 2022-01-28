@@ -9,16 +9,21 @@ repos:
       - id: check-merge-conflict
       - id: check-executables-have-shebangs
 
-  - repo: local
+  - repo: https://github.com/ansible-community/ansible-lint
+    rev: v5.3.2
     hooks:
-      - id: terraform-fmt
-        name: Terraform fmt
-        description: Reformat configuration in the standard style
-        entry: .hooks/terraform-fmt.sh
-        language: script
-        files: (\.tf|\.tfvars)$
-        exclude: >
-          (?x)^(
-            .+\.terraform/\.*$
-          )$
-        require_serial: true
+      - id: ansible-lint
+
+  - repo: local
+      hooks:
+        - id: terraform-fmt
+          name: Terraform fmt
+          description: Reformat configuration in the standard style
+          entry: .hooks/terraform-fmt.sh
+          language: script
+          files: (\.tf|\.tfvars)$
+          exclude: >
+            (?x)^(
+              .+\.terraform/\.*$
+            )$
+          require_serial: true
