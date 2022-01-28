@@ -7,11 +7,11 @@ variable "output_dir" {
 variable "ssh_key_name" {
   type        = string
   description = "SSH key name"
-  default     = "privatevpn"
+  default     = "holtzman"
 }
 
 variable "instance_name" {
   type        = string
   description = "The name of EC2 instance"
-  default     = "privatevpn"
+  default     = "holtzman"
 }

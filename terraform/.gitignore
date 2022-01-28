@@ -1,0 +1,3 @@
+setup.tf
+.terraform/
+.terraform.lock.hcl

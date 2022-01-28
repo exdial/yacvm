@@ -2,8 +2,10 @@ FROM alpine:3.15.0 as build
 
 ENV TF_VER 1.1.0
 ENV TF_BASEURL https://releases.hashicorp.com/terraform
+ENV TG_VER 0.35.13
+ENV TG_BASEURL https://github.com/gruntwork-io/terragrunt/releases/download
 
-WORKDIR /usr/bin
+WORKDIR /build
 
 RUN apk add --no-cache --update curl \
  && curl -Lo terraform_${TF_VER}_SHA256SUMS \
@@ -13,9 +15,9 @@ RUN apk add --no-cache --update curl \
  && sha256sum -c terraform_${TF_VER}_SHA256SUMS 2>&1 | \
     grep terraform_${TF_VER}_linux_amd64.zip \
  && unzip terraform_${TF_VER}_linux_amd64.zip \
- && rm terraform_${TF_VER}_linux_amd64.zip \
- && chmod +x terraform
-
+ && rm terraform_${TF_VER}_linux_amd64.zip terraform_${TF_VER}_SHA256SUMS \
+ && curl -Lo terragrunt ${TG_BASEURL}/v${TG_VER}/terragrunt_linux_amd64 \
+ && chmod +x terraform terragrunt
 
 FROM alpine:3.15.0
 
@@ -24,8 +26,10 @@ ENV USER user
 RUN addgroup -g 1000 -S ${USER} \
  && adduser -u 1000 -S ${USER} -G ${USER} -h /home/${USER}
 
-COPY --from=build /usr/bin/terraform /usr/bin/terraform
+COPY --from=build /build /usr/bin
 
 RUN apk add --no-cache --update ansible
 
 USER ${USER}
+
+WORKDIR /code
