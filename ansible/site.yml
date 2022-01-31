@@ -12,7 +12,6 @@
   gather_facts: true
   become: true
   vars:
-    # Generate an idempotent random port number in the range 1024-65535
     - openvpn_port: "{{ 65535 | random(1024, seed=client_file_name) }}"
     - openvpn_proto: udp
     - openvpn_key_size: 2048
