@@ -7,5 +7,6 @@ resource "local_file" "ansible_inventory" {
       ansible_ssh_private_key_file = "${var.output_dir}/${var.name}.pem"
     }
   )
-  filename = "${var.output_dir}/inventory"
+  filename        = "${var.output_dir}/inventory"
+  file_permission = "0644"
 }

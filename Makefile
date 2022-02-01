@@ -63,13 +63,13 @@ docker-build: logo ## Build docker image
 	@docker system prune -f
 	@echo "✅ Done..."
 
-plan: logo notice ## Plan infrastructure
+plan: logo notice ## Plan infrastructure without changes
 	@echo "🏝 Running terraform plan..."
 	@docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
   	holtzman-effect sh -c "cd terraform && terragrunt plan"
 	@echo "✅ Done..."
 
-apply: logo notice ## Apply planned infrastructure on real cloud
+apply: logo notice ## Apply the planned infrastructure in the real world
 	@echo "🏝 Running terraform apply..."
 	@docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
   	holtzman-effect sh -c "cd terraform && terragrunt apply"
@@ -78,28 +78,35 @@ apply: logo notice ## Apply planned infrastructure on real cloud
 ping: logo notice ## Run ansible and ping the server
 	@echo "🏝 Running Ansible ping..."
 	@docker run --rm -v `pwd`:/code holtzman-effect sh -c \
-		"cd ansible && ansible -i ../out/inventory all -m ping"
+		"cd ansible && ansible all -m ping"
+	@echo "✅ Done..."
+
+deploy: logo notice ## Deploy the ansible playbook
+	@echo "🏝 Running Ansible playbook..."
+	@docker run --rm -v `pwd`:/code holtzman-effect sh -c \
+		"cd ansible && ansible-playbook site.yml"
 	@echo "✅ Done..."
 
 destroy: logo notice ## Destroy deployed infrastructure
 	@echo "🏝  Destroying deployed infrastructure..."
 	@docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
-  	"cd terragrunt && terragrunt destroy"
+		holtzman-effect sh -c "cd terraform && terragrunt destroy"
 	@echo "✅ Done..."
 
 clean: logo notice ## Cleanup files produced by Holtzman-effect
 	@echo "Cleanup..."
 	@rm -f ansible/ubuntu-bionic-18.04-cloudimg-console.log \
-				 terraform/_setup.tf terraform/_backend.tf
+				 terraform/_setup.tf terraform/_backend.tf \
+				 terraform/inputs.hcl.bak
 	@rm -rf ansible/.vagrant
 	@pushd ansible && vagrant destroy -f && popd
 	@echo "✅ Done..."
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-	TARGET = check-mac plan
+	TARGET = check-mac apply deploy clean
 else ifeq ($(UNAME), Linux)
-	TARGET = check-linux plan
+	TARGET = check-linux apply deploy clean
 else
 	TARGET = wrong-platform
 endif
