@@ -2,3 +2,4 @@ _setup.tf
 _backend.tf
 .terraform/
 .terraform.lock.hcl
+inputs.hcl.bak

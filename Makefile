@@ -65,29 +65,26 @@ docker-build: logo ## Build docker image
 
 plan: logo notice ## Plan infrastructure
 	@echo "🏝 Running terraform plan..."
-	@docker run --rm -v `pwd`/terraform:/code \
-                   -v $$HOME/.aws:/home/user/.aws \
-                   holtzman-effect terragrunt plan
+	@docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
+  	holtzman-effect sh -c "cd terraform && terragrunt plan"
 	@echo "✅ Done..."
 
 apply: logo notice ## Apply planned infrastructure on real cloud
 	@echo "🏝 Running terraform apply..."
-	@docker run --rm -v `pwd`/terraform:/code \
-                   -v $$HOME/.aws:/home/user/.aws \
-                   holtzman-effect terragrunt apply
+	@docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
+  	holtzman-effect sh -c "cd terraform && terragrunt apply"
 	@echo "✅ Done..."
 
 ping: logo notice ## Run ansible and ping the server
 	@echo "🏝 Running Ansible ping..."
 	@docker run --rm -v `pwd`:/code holtzman-effect sh -c \
-		'cd ansible && ansible -i ../terraform/out/inventory all -m ping'
+		"cd ansible && ansible -i ../out/inventory all -m ping"
 	@echo "✅ Done..."
 
 destroy: logo notice ## Destroy deployed infrastructure
 	@echo "🏝  Destroying deployed infrastructure..."
-	@docker run --rm -v `pwd`/terraform:/code \
-                   -v $$HOME/.aws:/home/user/.aws \
-                   holtzman-effect terragrunt destroy
+	@docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
+  	"cd terragrunt && terragrunt destroy"
 	@echo "✅ Done..."
 
 clean: logo notice ## Cleanup files produced by Holtzman-effect

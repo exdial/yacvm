@@ -4,6 +4,11 @@ resource "random_integer" "this" {
   max = 65535
 }
 
+# Get current IP address
+data "http" "myip" {
+  url = "https://ifconfig.co"
+}
+
 resource "aws_security_group_rule" "ingress_openvpn" {
   type              = "ingress"
   from_port         = random_integer.this.result
@@ -19,7 +24,7 @@ resource "aws_security_group_rule" "ingress_openssh" {
   to_port           = 22
   protocol          = "tcp"
   security_group_id = aws_security_group.this.id
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = ["${chomp(data.http.myip.body)}/32"]
 }
 
 resource "aws_security_group_rule" "egress" {
@@ -33,7 +38,7 @@ resource "aws_security_group_rule" "egress" {
 
 resource "aws_security_group" "this" {
   name        = var.name
-  description = "The main application group"
+  description = "Holtzman-effect security group"
 
   tags = {
     Name = var.name

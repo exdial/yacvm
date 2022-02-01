@@ -7,5 +7,5 @@ variable "name" {
 variable "output_dir" {
   type        = string
   description = "Directory for artfacts"
-  default     = "out"
+  default     = "../out"
 }

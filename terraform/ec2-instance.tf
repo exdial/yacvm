@@ -31,7 +31,7 @@ resource "aws_instance" "this" {
     }
   }
 
-  security_groups = [
+  vpc_security_group_ids = [
     aws_security_group.this.id
   ]
 

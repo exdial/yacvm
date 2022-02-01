@@ -4,7 +4,7 @@ resource "tls_private_key" "this" {
 }
 
 resource "local_file" "this" {
-  filename             = "${path.module}/${var.output_dir}/${var.name}.pem"
+  filename             = "${var.output_dir}/${var.name}.pem"
   file_permission      = "0600"
   directory_permission = "0700"
   sensitive_content    = tls_private_key.this.private_key_pem
