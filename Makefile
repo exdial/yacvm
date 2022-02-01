@@ -1,70 +1,119 @@
-docker-build: ## Build docker image
-	@clear && head -n 16 README.md | tail -n13 && echo
-	@docker build -t holtzman-effect . -f Dockerfile
+MAKEFLAGS += --silent
 
-plan: ## Perform terragrunt plan
-	@clear && head -n 16 README.md | tail -n13 && echo
-	@read -p "AWS profile [default]: " PROFILE; \
-	 echo "You have choosen the profile \"$$PROFILE\""; \
-	 sed -i.bak s/aws_profile.*/aws_profile\ =\ \"$$PROFILE\"/ terraform/inputs.hcl
-	@read -p "AWS region [us-east-1]: " REGION; \
-	 echo "You have choosen the region \"$$REGION\"" ; \
-	 sed -i.bak s/aws_region.*/aws_region\ =\ \"$$REGION\"/ terraform/inputs.hcl
-	@echo "🔨 Starting terraforming process"
-	@docker run --rm -v `pwd`/terraform:/code \
-									 -v $$HOME/.aws:/home/user/.aws \
-									 holtzman-effect terragrunt plan
+AWS_PROFILE := $(shell cat terraform/inputs.hcl | grep aws_profile \
+																								| awk '{print $$3}' \
+																								| tr -d '"''')
+AWS_REGION  := $(shell cat terraform/inputs.hcl | grep aws_region \
+																								| awk '{print $$3}' \
+																								| tr -d '"''')
 
-check: ## Check all requirements are met
-	@clear && head -n 16 README.md | tail -n13 && echo
-	@echo "Checking requirements..."
+logo:
+	@clear
+	@head -n 16 README.md | tail -n 13
+	@echo
+
+notice:
+	@echo "🔑 You're using AWS profile: $(AWS_PROFILE)"
+	@echo "🔑 You're using AWS region: $(AWS_REGION)"
+	@echo
+	@echo "Run \"make config\" to configure AWS"
+	@echo "credentials or edit terraform/inputs.hcl"
+	@echo
+
+check-mac: logo notice
+	@echo "🍏 Checking mac requirements..."
 	@command -v docker > /dev/null 2>&1 || \
-		(echo "❌ ERROR: Docker is required. \nVisit https://docs.docker.com/get-docker/"; exit 1)
+		(echo "❌ ERROR: Docker is required."; \
+		 echo "Visit https://docs.docker.com/desktop/mac/install/"; \
+		 exit 1)
 	@command -v vagrant > /dev/null 2>&1 || \
-		(echo "❌ ERROR: Vagrant is required. \nVisit https://www.vagrantup.com/"; exit 1)
+		(echo "❌ ERROR: Vagrant is required."; \
+		 echo "Visit https://www.vagrantup.com/"; \
+		 exit 1)
 	@echo "✅ Done..."
 
-test: ## Run tests
-	@clear && head -n 16 README.md | tail -n13 && echo
-	@cd $(CWD)/ansible && vagrant up
+check-linux: logo notice
+	@echo "🐧 Checking linux requirements..."
+	@command -v docker > /dev/null 2>&1 || \
+		(echo "❌ ERROR: Docker is required."; \
+		 echo "Visit https://docs.docker.com/engine/install/"; \
+		 exit 1)
+	@command -v vagrant > /dev/null 2>&1 || \
+		(echo "❌ ERROR: Vagrant is required."; \
+		 echo "Visit https://www.vagrantup.com/"; \
+		 exit 1)
+	@echo "✅ Done..."
 
-clean: ## Stop tests and delete all files produced by the Holtzman effect
-	@clear && head -n 16 README.md | tail -n13 && echo
-	cd $(CWD)/ansible && vagrant destroy -f
-	rm -f $(CWD)/ansible/ubuntu-bionic-18.04-cloudimg-console.log
-	rm -rf $(CWD)/ansible/.vagrant
-	cd $(CWD)/terraform && rm _setup.tf _backend.tf
+wrong-platform: logo notice
+	@echo "❌ Wrong platform"
 
-linux:
-	@echo linux
+config: logo ## Configure AWS credentials
+	@read -p "AWS profile [default]: " PROFILE; \
+	 echo "🔑 You've choosen the profile \"$$PROFILE\""; \
+	 sed -i.bak s/aws_profile.*/aws_profile\ =\ \"$$PROFILE\"/ \
+		terraform/inputs.hcl
+	@read -p "AWS region [us-east-1]: " REGION; \
+	 echo "🔑 You've choosen the region \"$$REGION\"" ; \
+	 sed -i.bak s/aws_region.*/aws_region\ =\ \"$$REGION\"/ \
+		terraform/inputs.hcl
 
-mac:
-	@echo mac
+docker-build: logo ## Build docker image
+	@echo "🏗  Running docker build..."
+	@docker build -t holtzman-effect . -f Dockerfile
+	@docker system prune -f
+	@echo "✅ Done..."
 
-wrong-platform:
-	@echo wrong platform
+plan: logo notice ## Plan infrastructure
+	@echo "🏝 Running terraform plan..."
+	@docker run --rm -v `pwd`/terraform:/code \
+                   -v $$HOME/.aws:/home/user/.aws \
+                   holtzman-effect terragrunt plan
+	@echo "✅ Done..."
 
+apply: logo notice ## Apply planned infrastructure on real cloud
+	@echo "🏝 Running terraform apply..."
+	@docker run --rm -v `pwd`/terraform:/code \
+                   -v $$HOME/.aws:/home/user/.aws \
+                   holtzman-effect terragrunt apply
+	@echo "✅ Done..."
+
+ping: logo notice ## Run ansible and ping the server
+	@echo "🏝 Running Ansible ping..."
+	@docker run --rm -v `pwd`:/code holtzman-effect sh -c \
+		'cd ansible && ansible -i ../terraform/out/inventory all -m ping'
+	@echo "✅ Done..."
+
+destroy: logo notice ## Destroy deployed infrastructure
+	@echo "🏝  Destroying deployed infrastructure..."
+	@docker run --rm -v `pwd`/terraform:/code \
+                   -v $$HOME/.aws:/home/user/.aws \
+                   holtzman-effect terragrunt destroy
+	@echo "✅ Done..."
+
+clean: logo notice ## Cleanup files produced by Holtzman-effect
+	@echo "Cleanup..."
+	@rm -f ansible/ubuntu-bionic-18.04-cloudimg-console.log \
+				 terraform/_setup.tf terraform/_backend.tf
+	@rm -rf ansible/.vagrant
+	@pushd ansible && vagrant destroy -f && popd
+	@echo "✅ Done..."
 
 UNAME := $(shell uname)
-CWD   := $(shell pwd)
-
-ifeq ($(UNAME), Linux)
-  TARGET = linux
-else ifeq ($(UNAME), Darwin)
-	TARGET = mac
+ifeq ($(UNAME), Darwin)
+	TARGET = check-mac plan
+else ifeq ($(UNAME), Linux)
+	TARGET = check-linux plan
 else
 	TARGET = wrong-platform
 endif
 
-install: $(TARGET)
+install: $(TARGET) ## Install Holtzman-effect
 
-.PHONY: linux mac wrong-platform
+.PHONY: help
 
 # https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: ## Display this info
-	@clear && head -n 16 README.md | tail -n13 && echo
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
-	| sort \
-	| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+help: logo notice ## Display this info
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
+   awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 .DEFAULT_GOAL := help
