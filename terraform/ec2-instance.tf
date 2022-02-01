@@ -15,31 +15,6 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-resource "aws_security_group_rule" "ingress_openvpn" {
-  type              = "ingress"
-  from_port         = 0
-  to_port           = 1337
-  protocol          = "udp"
-  security_group_id = aws_security_group.this.id
-}
-
-resource "aws_security_group_rule" "ingress_openssh" {
-  type              = "ingress"
-  from_port         = 0
-  to_port           = 22
-  protocol          = "tcp"
-  security_group_id = aws_security_group.this.id
-}
-
-resource "aws_security_group" "this" {
-  name        = var.name
-  description = "The main application group"
-
-  tags = {
-    Name = var.name
-  }
-}
-
 resource "aws_instance" "this" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t4g.nano" # https://ec2instances.info/
@@ -56,7 +31,7 @@ resource "aws_instance" "this" {
     }
   }
 
-  security_groups = [
+  vpc_security_group_ids = [
     aws_security_group.this.id
   ]
 
