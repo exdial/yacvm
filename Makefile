@@ -57,7 +57,7 @@ config: logo ## Configure AWS credentials
 	 sed -i.bak s/aws_region.*/aws_region\ =\ \"$$REGION\"/ \
 		terraform/inputs.hcl
 
-docker-build: logo ## Build docker image
+build: logo ## Build docker image
 	@echo "🏗  Running docker build..."
 	@docker build -t holtzman-effect . -f Dockerfile
 	@docker system prune -f
@@ -104,9 +104,9 @@ clean: logo notice ## Cleanup files produced by Holtzman-effect
 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-	TARGET = check-mac apply deploy clean
+	TARGET = check-mac build apply deploy clean
 else ifeq ($(UNAME), Linux)
-	TARGET = check-linux apply deploy clean
+	TARGET = check-linux build apply deploy clean
 else
 	TARGET = wrong-platform
 endif
