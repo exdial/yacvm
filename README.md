@@ -19,7 +19,7 @@
 
 # Abstract
 
-*Holtzman Effect* is a infrastructure code, that helps you to *Run your own private VPN server on AWS from scratch*
+*Holtzman Effect* help you to *Run your own private VPN server on AWS from scratch*
 
 ## Requirements
 * [Docker](https://docs.docker.com/get-docker/) installed on your machine

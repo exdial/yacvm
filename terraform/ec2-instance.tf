@@ -1,20 +1,26 @@
-# Lookup AMI
+# Lookup for the latest Ubuntu 18.04 AMI
 data "aws_ami" "ubuntu" {
   most_recent = true
 
+  # This filter depends on instance type you choose.
+  # Example: the t4g instance type uses a Graviton processor,
+  # so the architecture will be arm64. Whereas t3 instances use
+  # Intel x86_64 processors, so the architecture will be amd64.
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-arm64-server-*"]
   }
 
+  # Only HVM instances can launch TUN devices.
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
 
-  owners = ["099720109477"] # Canonical
+  owners = ["099720109477"] # Canonical account
 }
 
+# Define EC2 instance
 resource "aws_instance" "this" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t4g.nano" # https://ec2instances.info/
