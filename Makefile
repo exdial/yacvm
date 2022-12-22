@@ -178,6 +178,7 @@ clean: logo
 		terraform/_setup.tf terraform/_backend.tf terraform/inputs.hcl.bak \
 		terraform/terraform.tfstate terraform/terraform.tfstate.backup \
 		terraform/.terraform.lock.hcl
+	rm -rf terraform/.terraform
 	echo "✅ OK..."
 	echo
 
