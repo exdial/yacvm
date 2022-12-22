@@ -1,3 +1,8 @@
+# This container image using to ensure proper versions and portability
+# of required software
+
+# A minimal Docker image based on Alpine Linux
+# https://hub.docker.com/_/alpine/tags?name=3.17.0
 FROM alpine:3.15.0 as build
 
 ENV TF_VER 1.1.0

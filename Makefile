@@ -22,9 +22,9 @@ AWS_SECRET_ACCESS_KEY := $(shell grep aws_secret_access_key terraform/inputs.hcl
 # testenv(mac or linux) ▶️ build program ▶️ deploy infra ▶️ provision server ▶️ cleanup 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-	TARGET = check-mac build apply deploy clean
+	TARGET = check-mac build deploy clean
 else ifeq ($(UNAME), Linux)
-	TARGET = check-linux build apply deploy clean
+	TARGET = check-linux build deploy clean
 else
 	TARGET = wrong-platform
 endif
@@ -47,26 +47,40 @@ notice:
 
 check-mac: logo
 	echo "🍏 Checking env requirements in mac ..."
-	command -v docker > /dev/null 2>&1 || \
-		(echo "❌ Error: Docker required."; \
+	echo
+	command -v docker &>/dev/null || \
+		(echo "❌ Error: Docker required"; \
 		 echo "Visit https://docs.docker.com/desktop/mac/install/"; \
+		 echo; \
+		 exit 1)
+	docker info &>/dev/null || \
+		(echo "❌ Error: Docker Desktop is not running"; \
+		 echo; \
 		 exit 1)
 	echo "✅ OK..."
+	echo
 
 check-linux: logo
-	echo "🐧 Checking linux requirements..."
-	command -v docker > /dev/null 2>&1 || \
-		(echo "❌ Error: Docker required."; \
+	echo "🐧 Checking linux env requirements..."
+	echo
+	command -v docker &>/dev/null || \
+		(echo "❌ Error: Docker required"; \
 		 echo "Visit https://docs.docker.com/engine/install/"; \
+		 echo; \
+		 exit 1)
+	docker info &>/dev/null || \
+		(echo "❌ Error: Docker daemon is not running"; \
 		 exit 1)
 	echo "✅ OK..."
+	echo
 
 wrong-platform: logo
-	echo "❌ Error: Wrong platform"
+	echo "❌ Error: Wrong platform (only Mac and Linux supported)"
+	echo
 
 # 🗄️ Common targets
-install: $(TARGET) ## Install Holtzman-effect
-config: logo ## Configure AWS account credentials
+install: $(TARGET) ## 🚀 Install Holtzman-effect
+config: logo ## 🔐 Configure AWS account credentials
 	read -p "🔐 Enter AWS Access Key ID (press \"Enter\" to skip): " AWS_ACCESS_KEY_ID ;\
 		if [ ! -z $$AWS_ACCESS_KEY_ID ]; then \
 			sed -i.bak s/aws_access_key_id.*/aws_access_key_id\ =\ \"$$AWS_ACCESS_KEY_ID\"/g terraform/inputs.hcl; \
@@ -76,7 +90,7 @@ config: logo ## Configure AWS account credentials
 		fi ;\
 		echo
 
-	read -p "🔐 Enter AWS Secret Access Key (press \"Enter\" to skip): " AWS_SECRET_ACCESS_KEY ;\
+	read -p "🔑 Enter AWS Secret Access Key (press \"Enter\" to skip): " AWS_SECRET_ACCESS_KEY ;\
 		if [ ! -z $$AWS_SECRET_ACCESS_KEY_ID ]; then \
 			sed -i.bak s/aws_secret_access_key.*/aws_secret_access_key\ =\ \"$$AWS_SECRET_ACCESS_KEY\"/g terraform/inputs.hcl; \
 			echo AWS_SECRET_ACCESS_KEY now is $$AWS_SECRET_ACCESS_KEY; \
@@ -103,49 +117,67 @@ config: logo ## Configure AWS account credentials
 		fi ;\
 		echo
 
-# 🌱 Terraform-related interface targets
-build: logo ## Build docker image
+build: logo ## 🏗  Build docker image
 	echo "🏗  Building the Docker image..."
+	echo
 	docker build -t holtzman-effect . -f Dockerfile
 	echo "✅ OK..."
-plan: logo ## Generate infrastructure plan without any changes
+	echo
+
+dry-run: logo ## 🖇️  Dry run of infrastructure deployment (no real changes)
 	echo "🏝  Running terraform plan..."
+	echo
 	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
 		holtzman-effect sh -c "cd terraform && terragrunt plan"
 	echo "✅ OK..."
+	echo
 
-apply: logo ## Apply the planned infrastructure
-	echo "🏝  Running terraform apply..."
+deploy: logo ## 💡 Deploy the infrastructure
+	echo "🏝 Running terraform apply..."
+	echo
 	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
 		holtzman-effect sh -c "cd terraform && terragrunt apply"
 	echo "✅ OK..."
+	echo
 
-# 🚀 Ansible-related interface targets
-ping: logo ## Run ansible and ping the target server
+ping: logo ## 📡 Check server reachability
 	echo "🏝  Running Ansible ping..."
-	docker run --rm -v `pwd`:/code holtzman-effect sh -c \
-		"cd ansible && ansible all -m ping"
-	echo "✅ OK..."
-deploy: logo ## Deploy the ansible playbook
-	echo "🏝  Running Ansible playbook..."
+	echo
+	if [ -f ansible/inventory ]; then \
+		docker run --rm -v `pwd`:/code holtzman-effect sh -c \
+			"cd ansible && ansible all -m ping"; \
+	else \
+		echo "❌ Error: ansible inventory not found"; \
+		echo "Please make sure you already have a deployed server,"; \
+		echo "or perform a new deployment with \`make install\`."; \
+		exit 1; \
+	fi ;\
+	echo
+
+provision: logo ## 🪄 Provision server
+	echo "🏝 Running Ansible playbook..."
+	echo
 	docker run --rm -v `pwd`:/code holtzman-effect sh -c \
 		"cd ansible && ansible-playbook site.yml"
 	echo "✅ OK..."
-destroy: logo ## Destroy deployed infrastructure
-	echo "🏝  Destroying deployed infrastructure..."
-	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
-		holtzman-effect sh -c "cd terraform && terragrunt destroy"
-	echo "✅ OK..."
-clean: logo ## Cleanup files produced by Holtzman-effect
-	echo "🧹  Cleanup..."
+	echo "🧹 Cleanup..."
+	echo
 	rm -f ansible/ubuntu-bionic-18.04-cloudimg-console.log \
 		terraform/_setup.tf terraform/_backend.tf \
 		terraform/inputs.hcl.bak
 	rm -rf ansible/.vagrant
+	echo
+
+uninstall: logo ## 🗑️  Destroy deployed infrastructure
+	echo "🏝 Destroying deployed infrastructure..."
+	echo
+	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
+		holtzman-effect sh -c "cd terraform && terragrunt destroy"
 	echo "✅ OK..."
+	echo
 
 # https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: logo notice ## Display this info
+help: logo notice ## 🪬 Display this info
 	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
