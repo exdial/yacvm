@@ -1,3 +1,4 @@
+# Generate Ansible inventory from template based on calculated values
 resource "local_file" "ansible_inventory" {
   content = templatefile("inventory.tmpl",
     {
