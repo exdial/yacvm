@@ -22,9 +22,9 @@ AWS_SECRET_ACCESS_KEY := $(shell grep aws_secret_access_key terraform/inputs.hcl
 # testenv(mac or linux) ▶️ build program ▶️ deploy infra ▶️ provision server ▶️ cleanup 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-	TARGET = check-mac build deploy clean
+	TARGET = check-mac build deploy provision clean
 else ifeq ($(UNAME), Linux)
-	TARGET = check-linux build deploy clean
+	TARGET = check-linux build deploy provision clean
 else
 	TARGET = wrong-platform
 endif
@@ -80,6 +80,7 @@ wrong-platform: logo
 
 # 🗄️ Common targets
 install: $(TARGET) ## 🚀 Install Holtzman-effect
+uninstall: logo destroy clean ## 🗑️  Destroy deployed infrastructure
 config: logo ## 🔐 Configure AWS account credentials
 	read -p "🔐 Enter AWS Access Key ID (press \"Enter\" to skip): " AWS_ACCESS_KEY_ID ;\
 		if [ ! -z $$AWS_ACCESS_KEY_ID ]; then \
@@ -117,7 +118,7 @@ config: logo ## 🔐 Configure AWS account credentials
 		fi ;\
 		echo
 
-build: logo ## 🏗  Build docker image
+build: logo
 	echo "🏗  Building the Docker image..."
 	echo
 	docker build -t holtzman-effect . -f Dockerfile
@@ -133,7 +134,7 @@ dry-run: logo ## 🖇️  Dry run of infrastructure deployment (no real changes)
 	echo
 
 deploy: logo ## 💡 Deploy the infrastructure
-	echo "🏝 Running terraform apply..."
+	echo "🏝  Running terraform apply..."
 	echo
 	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
 		holtzman-effect sh -c "cd terraform && terragrunt apply"
@@ -141,9 +142,9 @@ deploy: logo ## 💡 Deploy the infrastructure
 	echo
 
 ping: logo ## 📡 Check server reachability
-	echo "🏝  Running Ansible ping..."
+	echo "📡  Running Ansible ping..."
 	echo
-	if [ -f ansible/inventory ]; then \
+	if [ -f _output/inventory ]; then \
 		docker run --rm -v `pwd`:/code holtzman-effect sh -c \
 			"cd ansible && ansible all -m ping"; \
 	else \
@@ -154,30 +155,34 @@ ping: logo ## 📡 Check server reachability
 	fi ;\
 	echo
 
-provision: logo ## 🪄 Provision server
+provision: logo
 	echo "🏝 Running Ansible playbook..."
 	echo
 	docker run --rm -v `pwd`:/code holtzman-effect sh -c \
 		"cd ansible && ansible-playbook site.yml"
 	echo "✅ OK..."
-	echo "🧹 Cleanup..."
-	echo
-	rm -f ansible/ubuntu-bionic-18.04-cloudimg-console.log \
-		terraform/_setup.tf terraform/_backend.tf \
-		terraform/inputs.hcl.bak
-	rm -rf ansible/.vagrant
 	echo
 
-uninstall: logo ## 🗑️  Destroy deployed infrastructure
-	echo "🏝 Destroying deployed infrastructure..."
+destroy: logo
+	echo "🗑️  Destroying deployed infrastructure..."
 	echo
 	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
 		holtzman-effect sh -c "cd terraform && terragrunt destroy"
 	echo "✅ OK..."
 	echo
 
+clean: logo
+	echo "🧹 Cleanup..."
+	echo
+	rm -f ansible/ubuntu-bionic-18.04-cloudimg-console.log \
+		terraform/_setup.tf terraform/_backend.tf terraform/inputs.hcl.bak \
+		terraform/terraform.tfstate terraform/terraform.tfstate.backup \
+		terraform/.terraform.lock.hcl
+	echo "✅ OK..."
+	echo
+
 # https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help: logo notice ## 🪬 Display this info
+help: logo notice
 	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
