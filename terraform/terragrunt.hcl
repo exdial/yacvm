@@ -24,15 +24,7 @@ terraform {
     commands = ["apply", "plan"]
     execute  = ["terraform", "init"]
   }
-  
-  # Remove generated config files after "terraform apply" or "terraform plan"
-  # is completed
-  after_hook "after_hook" {
-    commands     = ["apply", "plan"]
-    execute      = ["rm", "_setup.tf", "_backend.tf"]
-    run_on_error = true
-  }
-  
+
   # Force Terraform to auto approve "apply" and "destroy" commands
   extra_arguments "auto_approve" {
     commands = [

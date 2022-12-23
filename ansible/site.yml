@@ -4,12 +4,12 @@
   tasks:
     - name: 🐍 Ensure Python is present
       raw: >
-        test -x /usr/bin/python3 ||
-        sudo apt-get update &&
-        sudo apt-get -yq install python-simplejson
+        test -x /usr/bin/python3.6 ||
+        ( sudo apt-get update &&
+          sudo apt-get -yq install python-simplejson )
 
 - hosts: all
-  gather_facts: true
+  gather_facts: false
   become: true
   vars:
     openvpn_port: "{{ 65535 | random(1024, seed=client_file_name) }}"
@@ -250,7 +250,7 @@
         - name: 🧾 Getting your new openvpn client config
           fetch:
             src: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
-            dest: ./{{ clientname }}-{{ client_file_name }}
+            dest: ../_output/{{ clientname }}-{{ client_file_name }}
             flat: true
 
         - name: ⚙️  Cleanup remote client configs

@@ -9,30 +9,30 @@ ifndef DEBUG
 endif
 
 # Load variables from external file to show them in the main menu
-AWS_PROFILE           := $(shell grep aws_profile terraform/inputs.hcl \
-				          | awk '{print $$3'} | tr -d '"''')
-AWS_REGION            := $(shell grep aws_region terraform/inputs.hcl \
-				          | awk '{print $$3'} | tr -d '"''')
-AWS_ACCESS_KEY_ID 	  := $(shell grep aws_access_key_id terraform/inputs.hcl \
-					      | awk '{print $$3}' | tr -d '"''')
-AWS_SECRET_ACCESS_KEY := $(shell grep aws_secret_access_key terraform/inputs.hcl \
-						  | awk '{print $$3}' | tr -d '"'')
+AWS_PROFILE				:= $(shell grep aws_profile terraform/inputs.hcl \
+						| awk '{print $$3}' | tr -d '"')
+AWS_REGION				:= $(shell grep aws_region terraform/inputs.hcl \
+						| awk '{print $$3}' | tr -d '"')
+AWS_ACCESS_KEY_ID		:= $(shell grep aws_access_key_id terraform/inputs.hcl \
+						| awk '{print $$3}' | tr -d '"')
+AWS_SECRET_ACCESS_KEY	:= $(shell grep aws_secret_access_key terraform/inputs.hcl \
+						| awk '{print $$3}' | tr -d '"')
 
 # General process:
 # testenv(mac or linux) ▶️ build program ▶️ deploy infra ▶️ provision server ▶️ cleanup 
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-	TARGET = check-mac build deploy provision clean
+    TARGET = check-mac build deploy provision clean
 else ifeq ($(UNAME), Linux)
-	TARGET = check-linux build deploy provision clean
+    TARGET = check-linux build deploy provision clean
 else
-	TARGET = wrong-platform
+    TARGET = wrong-platform
 endif
 
 # Service targets (will never be called directly)
 logo:
 	clear
-	head -n 14 README.md | tail -n 13
+	#head -n 14 README.md | tail -n 13
 	echo
 
 notice:
@@ -119,7 +119,7 @@ config: logo ## 🔐 Configure AWS account credentials
 		echo
 
 build: logo
-	echo "🏗  Building the Docker image..."
+	echo "🏗  Building Docker image..."
 	echo
 	docker build -t holtzman-effect . -f Dockerfile
 	echo "✅ OK..."
@@ -145,18 +145,18 @@ ping: logo ## 📡 Check server reachability
 	echo "📡  Running Ansible ping..."
 	echo
 	if [ -f _output/inventory ]; then \
-		docker run --rm -v `pwd`:/code holtzman-effect sh -c \
+		docker run -v `pwd`:/code holtzman-effect sh -c \
 			"cd ansible && ansible all -m ping"; \
 	else \
 		echo "❌ Error: ansible inventory not found"; \
 		echo "Please make sure you already have a deployed server,"; \
-		echo "or perform a new deployment with \`make install\`."; \
+		echo "or perform a new deployment with make install."; \
 		exit 1; \
 	fi ;\
 	echo
 
 provision: logo
-	echo "🏝 Running Ansible playbook..."
+	echo "🏝  Running Ansible playbook..."
 	echo
 	docker run --rm -v `pwd`:/code holtzman-effect sh -c \
 		"cd ansible && ansible-playbook site.yml"
@@ -176,9 +176,23 @@ clean: logo
 	echo
 	rm -f ansible/ubuntu-bionic-18.04-cloudimg-console.log \
 		terraform/_setup.tf terraform/_backend.tf terraform/inputs.hcl.bak \
-		terraform/terraform.tfstate terraform/terraform.tfstate.backup \
-		terraform/.terraform.lock.hcl
-	rm -rf terraform/.terraform
+		terraform/terraform.tfstate.backup
+	echo "✅ OK..."
+	echo
+
+ifeq (vpnconfig,$(firstword $(MAKECMDGOALS)))
+    OVPN_NAME := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+    ifndef OVPN_NAME
+        $(error ❌ VPN config name is not defined. Try "make vpnconfig elonmusk")
+    endif
+    $(eval $(OVPN_NAME):;@:)
+endif
+
+vpnconfig: ## 🪪 Issue VPN config
+	echo "🪪 Generating VPN configuration..."
+		docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
+		holtzman-effect sh -c \
+			"cd ansible && ansible-playbook site.yml -t client -e clientname=$(OVPN_NAME)"
 	echo "✅ OK..."
 	echo
 
@@ -187,4 +201,4 @@ help: logo notice
 	grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: *
+.PHONY: * vpnconfig
