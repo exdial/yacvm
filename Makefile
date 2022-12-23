@@ -32,7 +32,7 @@ endif
 # Service targets (will never be called directly)
 logo:
 	clear
-	#head -n 14 README.md | tail -n 13
+	head -n 14 README.md | tail -n 13
 	echo
 
 notice:
