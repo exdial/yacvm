@@ -2,21 +2,23 @@
 - hosts: all
   gather_facts: false
   tasks:
+
     - name: 🐍 Ensure Python is present
       raw: >
         test -x /usr/bin/python3.6 ||
         ( sudo apt-get update &&
           sudo apt-get -yq install python-simplejson )
 
+
 - hosts: all
   gather_facts: true
   become: true
   vars:
-    openvpn_port: "{{ 65535 | random(1024, seed=client_file_name) }}"
+    openvpn_port: "{{ 65535 | random(1024, seed=inventory_hostname) }}"
     openvpn_proto: udp
     openvpn_key_size: 2048
-    client_file_name: "client.ovpn"
   tasks:
+
     - name: ⚙️  Provide proper `/etc/resolv.conf`
       copy:
         content: |
@@ -24,16 +26,17 @@
           nameserver 1.0.0.1
           options no-inet6 timeout:1 attempts:5
         dest: /etc/resolv.conf
+
     - name: ⚙️  Provide proper `/etc/hosts`
       copy:
         content: |
           127.0.0.1    localhost
           127.0.1.1    {{ inventory_hostname_short }} {{ inventory_hostname }}
         dest: /etc/hosts
+
     - name: ⚙️  Set hostname
       hostname: name={{ inventory_hostname }}
-    - name: ⚙️  Upgrade the system
-      apt: upgrade=dist
+
     - name: ⚙️  Ensure required packages installed
       apt:
         name: "{{ item.name }}"
@@ -44,15 +47,19 @@
         - {name: resolvconf, state: absent, purge: true}
         - {name: openvpn, state: present}
         - {name: easy-rsa, state: present}
+
     - name: ⚙️  Provide openvpn user
       user: name=openvpn shell=/bin/bash home=/etc/openvpn system=yes
+
     - name: ⚙️  Ensure openvpn directories exist
       file: name=/etc/openvpn/keys state=directory
+
     - name: ⚙️  Ensure openssl symlink exist
       file:
         src: /usr/share/easy-rsa/openssl-1.0.0.cnf
         dest: /usr/share/easy-rsa/openssl.cnf
         state: link
+
     - name: ⚙️  Ensure sysctls are set
       sysctl: name={{ item }} value=1 state=present sysctl_set=yes reload=yes
       with_items:
@@ -61,18 +68,17 @@
         - net.ipv6.conf.default.disable_ipv6
         - net.ipv6.conf.lo.disable_ipv6
         - net.ipv6.conf.{{ ansible_default_ipv4.interface }}.disable_ipv6
+
     - name: ⚙️  Ensure firewall rules are set
       copy:
         content: |
           #!/sbin/iptables-restore
           *filter
           :INPUT DROP
-          :FORWARD DROP
+          :FORWARD ACCEPT
           :OUTPUT ACCEPT
           -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
           -A INPUT -i lo -j ACCEPT
-          -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
-          -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
           -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
           -A INPUT -p {{ openvpn_proto }} -m {{ openvpn_proto }} --dport {{ openvpn_port }} -j ACCEPT
           -A INPUT -p icmp -j ACCEPT
@@ -89,6 +95,7 @@
         dest: /etc/network/if-up.d/iptables-rules
         mode: 0755
       notify: apply firewall
+
     - name: 📁 Generate openvpn variables
       copy:
         content: |
@@ -104,6 +111,7 @@
           export KEY_ORG="Acme"
           export KEY_EMAIL="mail@acme.tld"
         dest: /usr/share/easy-rsa/vars
+
     - name: 📁 Generate openvpn server config
       copy:
         content: |
@@ -133,9 +141,11 @@
           verb 0
         dest: /etc/openvpn/server.conf
       notify: start openvpn
+
     - name: 📁 Check server builder
       stat: path=/usr/share/easy-rsa/build-server-keys
       register: sbuilder
+
     - name: 📁 Build server certificates
       copy:
         content: |
@@ -171,6 +181,7 @@
 
         - name: ⚙️  Get public IP
           ipify_facts:
+
         - name: 📄 Generate client config
           copy:
             content: |
@@ -196,24 +207,27 @@
               </key>
               <tls-auth>
               </tls-auth>
-            dest: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
+            dest: /etc/openvpn/keys/{{ clientname }}.ovpn
 
         - name: 📩 Get ca.crt
           slurp: src=/etc/openvpn/keys/ca.crt
           register: cacrt
+
         - name: 📩 Get {{ clientname }}.crt
           slurp: src=/etc/openvpn/keys/{{ clientname }}.crt
           register: clientcrt
+
         - name: 📩 Get {{ clientname }}.key
           slurp: src=/etc/openvpn/keys/{{ clientname }}.key
           register: clientkey
+
         - name: 📩 Get ta.key
           slurp: src=/etc/openvpn/keys/ta.key
           register: takey
 
         - name: 📨 Writing ca.crt
           blockinfile:
-            path: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
+            path: /etc/openvpn/keys/{{ clientname }}.ovpn
             insertafter: "<ca>"
             block: "{{ cacrt['content'] | b64decode }}"
             marker: "# {mark} ca.crt"
@@ -222,7 +236,7 @@
 
         - name: 📨 Writing client.crt
           blockinfile:
-            path: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
+            path: /etc/openvpn/keys/{{ clientname }}.ovpn
             insertafter: "<cert>"
             block: "{{ clientcrt['content'] | b64decode }}"
             marker: "# {mark} client.crt"
@@ -231,7 +245,7 @@
 
         - name: 📨 Writing client.key
           blockinfile:
-            path: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
+            path: /etc/openvpn/keys/{{ clientname }}.ovpn
             insertafter: "<key>"
             block: "{{ clientkey['content'] | b64decode }}"
             marker: "# {mark} client.key"
@@ -240,7 +254,7 @@
 
         - name: 📨 Writing ta.key
           blockinfile:
-            path: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
+            path: /etc/openvpn/keys/{{ clientname }}.ovpn
             insertafter: "<tls-auth>"
             block: "{{ takey['content'] | b64decode }}"
             marker: "# {mark} ta.key"
@@ -249,13 +263,13 @@
 
         - name: 🧾 Getting your new openvpn client config
           fetch:
-            src: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
-            dest: ../_output/{{ clientname }}-{{ client_file_name }}
+            src: /etc/openvpn/keys/{{ clientname }}.ovpn
+            dest: ../_output/{{ clientname }}.ovpn
             flat: true
 
         - name: ⚙️  Cleanup remote client configs
           file:
-            path: /etc/openvpn/keys/{{ clientname }}-{{ client_file_name }}
+            path: /etc/openvpn/keys/{{ clientname }}.ovpn
             state: absent
 
       when: clientname is defined
