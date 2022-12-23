@@ -1,5 +1,6 @@
-_setup.tf
-_backend.tf
+_providers.tf
 .terraform/
 .terraform.lock.hcl
 inputs.hcl.bak
+terraform.tfstate
+terraform.tfstate.backup
