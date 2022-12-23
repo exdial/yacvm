@@ -9,7 +9,7 @@ resource "local_sensitive_file" "this" {
   filename             = "${var.output_dir}/${var.name}.pem"
   file_permission      = "0600"
   directory_permission = "0700"
-  content    = tls_private_key.this.private_key_pem
+  content              = tls_private_key.this.private_key_pem
 }
 
 # Put public key into AWS Keypairs

@@ -6,13 +6,13 @@
 # and define fallback variables in case the former are missing
 locals {
   profile_vars = read_terragrunt_config("inputs.hcl")
-  region_vars = read_terragrunt_config("inputs.hcl")
+  region_vars  = read_terragrunt_config("inputs.hcl")
 
   aws_profile = local.profile_vars.locals.aws_profile
   aws_region  = local.region_vars.locals.aws_region
 
   aws_profile_fallback = local.aws_profile == "" ? "default" : local.aws_profile
-  aws_region_fallback = local.aws_region == "" ? "us-east-1" : local.aws_region
+  aws_region_fallback  = local.aws_region == "" ? "us-east-1" : local.aws_region
 
 }
 
@@ -31,7 +31,7 @@ terraform {
       "apply",
       "destroy"
     ]
-    
+
     arguments = [
       "-auto-approve"
     ]
@@ -51,9 +51,9 @@ remote_state {
 
 # Define generate block for important configurations
 generate "setup" {
-  path = "_setup.tf"
+  path      = "_setup.tf"
   if_exists = "overwrite_terragrunt"
-  contents = <<EOF
+  contents  = <<EOF
     terraform {
       required_version = "1.1.0"
 
