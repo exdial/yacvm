@@ -1,4 +1,4 @@
-_providers.tf
+config.tf
 .terraform/
 .terraform.lock.hcl
 inputs.hcl.bak

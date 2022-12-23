@@ -9,7 +9,7 @@
           sudo apt-get -yq install python-simplejson )
 
 - hosts: all
-  gather_facts: false
+  gather_facts: true
   become: true
   vars:
     openvpn_port: "{{ 65535 | random(1024, seed=client_file_name) }}"
