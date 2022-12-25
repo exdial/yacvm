@@ -3,6 +3,15 @@
   gather_facts: false
   tasks:
 
+    - name: Ensure that openvpn_port is a number
+      assert:
+        that:
+          - openvpn_port is regex("^[0-9]+$")
+
+    - name: Wait for server to become available after terraforming
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+
     - name: 🐍 Ensure Python is present
       raw: >
         test -x /usr/bin/python3.6 ||
@@ -14,7 +23,6 @@
   gather_facts: true
   become: true
   vars:
-    openvpn_port: "{{ 65535 | random(1024, seed=inventory_hostname) }}"
     openvpn_proto: udp
     openvpn_key_size: 2048
   tasks:
