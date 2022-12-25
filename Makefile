@@ -133,7 +133,7 @@ dry-run: logo ## 🖇️  Dry run of infrastructure deployment (no real changes)
 	echo "✅ OK..."
 	echo
 
-deploy: logo ## 💡 Deploy the infrastructure
+deploy: logo ## 💡 (re)Deploy the infrastructure
 	echo "🏝  Running terraform apply..."
 	echo
 	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
@@ -188,7 +188,7 @@ ifeq (vpnconfig,$(firstword $(MAKECMDGOALS)))
     $(eval $(OVPN_NAME):;@:)
 endif
 
-vpnconfig: ## 🪪 Issue VPN config
+vpnconfig: ## 🪪  Issue VPN config
 	echo "🪪 Generating VPN configuration..."
 		docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
 		holtzman-effect sh -c \

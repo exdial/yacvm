@@ -42,3 +42,10 @@ ready to provide you a full-fledged, enterprise grade VPN server.
 
 * `make config`
 * `make install`
+* `make vpnconfig elonmusk`
+
+## FAQ
+
+> My external IP address is changed and I can't connect to the server via SSH.
+In this case the "make ping" command also will fail. Perform "make deploy"
+command to add your current IP address to AWS security group.
