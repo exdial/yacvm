@@ -3,7 +3,7 @@
   gather_facts: false
   tasks:
 
-    - name: Ensure that openvpn_port is a number
+    - name: Ensure openvpn_port is a number
       assert:
         that:
           - openvpn_port is regex("^[0-9]+$")
@@ -11,13 +11,6 @@
     - name: Wait for server to become available after terraforming
       ansible.builtin.wait_for_connection:
         timeout: 600
-
-    - name: 🐍 Ensure Python is present
-      raw: >
-        test -x /usr/bin/python3.6 ||
-        ( sudo apt-get update &&
-          sudo apt-get -yq install python-simplejson )
-
 
 - hosts: all
   gather_facts: true
@@ -27,26 +20,26 @@
     openvpn_key_size: 2048
   tasks:
 
-    - name: ⚙️  Provide proper `/etc/resolv.conf`
-      copy:
+    - name: ⚙️  Ensure `/etc/resolv.conf` is configured
+      ansible.builtin.copy:
         content: |
           nameserver 1.1.1.1
           nameserver 1.0.0.1
           options no-inet6 timeout:1 attempts:5
         dest: /etc/resolv.conf
 
-    - name: ⚙️  Provide proper `/etc/hosts`
-      copy:
+    - name: ⚙️  Ensure `/etc/hosts` is configured
+      ansible.builtin.copy:
         content: |
           127.0.0.1    localhost
           127.0.1.1    {{ inventory_hostname_short }} {{ inventory_hostname }}
         dest: /etc/hosts
 
-    - name: ⚙️  Set hostname
-      hostname: name={{ inventory_hostname }}
+    - name: ⚙️  Ensure hostname is correct
+      ansible.builtin.hostname: name={{ inventory_hostname }}
 
     - name: ⚙️  Ensure required packages installed
-      apt:
+      ansible.builtin.apt:
         name: "{{ item.name }}"
         state: "{{ item.state }}"
         purge: "{{ item.purge | default(omit) }}"
@@ -56,20 +49,31 @@
         - {name: openvpn, state: present}
         - {name: easy-rsa, state: present}
 
-    - name: ⚙️  Provide openvpn user
-      user: name=openvpn shell=/bin/bash home=/etc/openvpn system=yes
+    - name: ⚙️  Ensure OpenVPN user exists
+      ansible.builtin.user:
+        name: openvpn
+        shell: /bin/bash
+        home: /etc/openvpn
+        system: true
 
-    - name: ⚙️  Ensure openvpn directories exist
-      file: name=/etc/openvpn/keys state=directory
+    - name: ⚙️  Ensure OpenVPN directories exist
+      ansible.builtin.file:
+        name: /etc/openvpn/keys
+        state: directory
 
-    - name: ⚙️  Ensure openssl symlink exist
-      file:
+    - name: ⚙️  Ensure OpenSSL symlink exist
+      ansible.builtin.file:
         src: /usr/share/easy-rsa/openssl-1.0.0.cnf
         dest: /usr/share/easy-rsa/openssl.cnf
         state: link
 
-    - name: ⚙️  Ensure sysctls are set
-      sysctl: name={{ item }} value=1 state=present sysctl_set=yes reload=yes
+    - name: ⚙️  Ensure sysctl entries are set
+      ansible.posix.sysctl:
+        name: "{{ item }}"
+        value: 1
+        state: present
+        sysctl_set: true
+        reload: true
       with_items:
         - net.ipv4.ip_forward
         - net.ipv6.conf.all.disable_ipv6
@@ -78,7 +82,7 @@
         - net.ipv6.conf.{{ ansible_default_ipv4.interface }}.disable_ipv6
 
     - name: ⚙️  Ensure firewall rules are set
-      copy:
+      ansible.builtin.copy:
         content: |
           #!/sbin/iptables-restore
           *filter
@@ -102,10 +106,18 @@
           COMMIT
         dest: /etc/network/if-up.d/iptables-rules
         mode: 0755
-      notify: apply firewall
+      notify: Apply firewall rules
 
-    - name: 📁 Generate openvpn variables
-      copy:
+    - name: Ensure the server is marked as provisioned
+      ansible.builtin.file:
+        path: /.holtzman-effect
+        state: touch
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: 📁 Ensure OpenVPN variables file configured properly
+      ansible.builtin.copy:
         content: |
           export EASY_RSA="/usr/share/easy-rsa"
           export KEY_CONFIG="$EASY_RSA/openssl.cnf"
@@ -120,8 +132,8 @@
           export KEY_EMAIL="mail@acme.tld"
         dest: /usr/share/easy-rsa/vars
 
-    - name: 📁 Generate openvpn server config
-      copy:
+    - name: 📁 Generate OpenVPN server config
+      ansible.builtin.copy:
         content: |
           mode server
           tls-server
@@ -148,14 +160,10 @@
           group openvpn
           verb 0
         dest: /etc/openvpn/server.conf
-      notify: start openvpn
+      notify: Start OpenVPN
 
-    - name: 📁 Check server builder
-      stat: path=/usr/share/easy-rsa/build-server-keys
-      register: sbuilder
-
-    - name: 📁 Build server certificates
-      copy:
+    - name: 📁 Generate a server certificates builder and only run it once
+      ansible.builtin.copy:
         content: |
           #!/bin/bash
           source /usr/share/easy-rsa/vars
@@ -166,32 +174,28 @@
           /usr/share/easy-rsa/pkitool --server server
         dest: /usr/share/easy-rsa/build-server-keys
         mode: 0755
-      notify: build server keys
-      when: sbuilder.stat.exists == False
+        force: false
+      notify: Build server keys
+
+    - name: 📄 Generate a client certificates builder and run it on demand
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+          source /usr/share/easy-rsa/vars
+          /usr/share/easy-rsa/pkitool $1
+        dest: /usr/share/easy-rsa/build-client-keys
+        mode: 0755
+        force: false
 
     - block:
-        - name: 📄 Check client builder
-          stat: path=/usr/share/easy-rsa/build-client-keys
-          register: cbuilder
+        - name: 📄 Generate OpenVPN client certificate
+          ansible.builtin.command: /usr/share/easy-rsa/build-client-keys {{ clientname }}
 
-        - name: 📄 Build client certificates
-          copy:
-            content: |
-              #!/bin/bash
-              source /usr/share/easy-rsa/vars
-              /usr/share/easy-rsa/pkitool $1
-            dest: /usr/share/easy-rsa/build-client-keys
-            mode: 0755
-          when: cbuilder.stat.exists == False
+        - name: ⚙️  Getting a public IP
+          community.general.ipify_facts:
 
-        - name: 📄 Generate client certificate
-          shell: /usr/share/easy-rsa/build-client-keys {{ clientname }}
-
-        - name: ⚙️  Get public IP
-          ipify_facts:
-
-        - name: 📄 Generate client config
-          copy:
+        - name: 📄 Generate OpenVPN client config
+          ansible.builtin.copy:
             content: |
               client
               tls-client
@@ -217,24 +221,24 @@
               </tls-auth>
             dest: /etc/openvpn/keys/{{ clientname }}.ovpn
 
-        - name: 📩 Get ca.crt
-          slurp: src=/etc/openvpn/keys/ca.crt
+        - name: 📩 Slurp ca.crt
+          ansible.builtin.slurp: src=/etc/openvpn/keys/ca.crt
           register: cacrt
 
-        - name: 📩 Get {{ clientname }}.crt
-          slurp: src=/etc/openvpn/keys/{{ clientname }}.crt
+        - name: 📩 Slurp {{ clientname }}.crt
+          ansible.builtin.slurp: src=/etc/openvpn/keys/{{ clientname }}.crt
           register: clientcrt
 
-        - name: 📩 Get {{ clientname }}.key
-          slurp: src=/etc/openvpn/keys/{{ clientname }}.key
+        - name: 📩 Slurp {{ clientname }}.key
+          ansible.builtin.slurp: src=/etc/openvpn/keys/{{ clientname }}.key
           register: clientkey
 
-        - name: 📩 Get ta.key
-          slurp: src=/etc/openvpn/keys/ta.key
+        - name: 📩 Slurp ta.key
+          ansible.builtin.slurp: src=/etc/openvpn/keys/ta.key
           register: takey
 
-        - name: 📨 Writing ca.crt
-          blockinfile:
+        - name: 📨 Injecting ca.crt into final user config
+          ansible.builtin.blockinfile:
             path: /etc/openvpn/keys/{{ clientname }}.ovpn
             insertafter: "<ca>"
             block: "{{ cacrt['content'] | b64decode }}"
@@ -242,8 +246,8 @@
             marker_begin: Begin
             marker_end: End
 
-        - name: 📨 Writing client.crt
-          blockinfile:
+        - name: 📨 Injecting client.crt into final user config
+          ansible.builtin.blockinfile:
             path: /etc/openvpn/keys/{{ clientname }}.ovpn
             insertafter: "<cert>"
             block: "{{ clientcrt['content'] | b64decode }}"
@@ -251,8 +255,8 @@
             marker_begin: Begin
             marker_end: End
 
-        - name: 📨 Writing client.key
-          blockinfile:
+        - name: 📨 Injecting client.key into final user config
+          ansible.builtin.blockinfile:
             path: /etc/openvpn/keys/{{ clientname }}.ovpn
             insertafter: "<key>"
             block: "{{ clientkey['content'] | b64decode }}"
@@ -260,8 +264,8 @@
             marker_begin: Begin
             marker_end: End
 
-        - name: 📨 Writing ta.key
-          blockinfile:
+        - name: 📨 Injecting ta.key into final user config
+          ansible.builtin.blockinfile:
             path: /etc/openvpn/keys/{{ clientname }}.ovpn
             insertafter: "<tls-auth>"
             block: "{{ takey['content'] | b64decode }}"
@@ -269,14 +273,14 @@
             marker_begin: Begin
             marker_end: End
 
-        - name: 🧾 Getting your new openvpn client config
-          fetch:
+        - name: 🧾 Downloading a final OpenVPN client config
+          ansible.builtin.fetch:
             src: /etc/openvpn/keys/{{ clientname }}.ovpn
             dest: ../_output/{{ clientname }}.ovpn
             flat: true
 
-        - name: ⚙️  Cleanup remote client configs
-          file:
+        - name: 🧹 Cleanup remote client configs
+          ansible.builtin.file:
             path: /etc/openvpn/keys/{{ clientname }}.ovpn
             state: absent
 
@@ -284,9 +288,9 @@
       tags: client
 
   handlers:
-    - name: apply firewall
+    - name: Apply firewall rules
       command: /etc/network/if-up.d/iptables-rules
-    - name: build server keys
-      shell: /usr/share/easy-rsa/build-server-keys
-    - name: start openvpn
+    - name: Build server keys
+      command: /usr/share/easy-rsa/build-server-keys
+    - name: Start OpenVPN
       systemd: name=openvpn@server state=restarted
