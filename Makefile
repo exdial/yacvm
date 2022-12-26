@@ -145,7 +145,7 @@ ping: logo ## 📡 Check server reachability
 	echo "📡  Running Ansible ping..."
 	echo
 	if [ -f _output/inventory ]; then \
-		docker run -v `pwd`:/code holtzman-effect sh -c \
+		docker run --rm -v `pwd`:/code holtzman-effect sh -c \
 			"cd ansible && ansible all -m ping"; \
 	else \
 		echo "❌ Error: ansible inventory not found"; \
