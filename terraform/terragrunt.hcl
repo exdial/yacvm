@@ -5,15 +5,17 @@
 # Load profile and region variables from inputs.hcl
 # and define fallback variables in case the former are missing
 locals {
-  profile_vars = read_terragrunt_config("inputs.hcl")
-  region_vars  = read_terragrunt_config("inputs.hcl")
+  external_vars = read_terragrunt_config("inputs.hcl")
 
-  aws_profile = local.profile_vars.locals.aws_profile
-  aws_region  = local.region_vars.locals.aws_region
+  aws_profile = local.external_vars.locals.aws_profile
+  aws_region  = local.external_vars.locals.aws_region
 
   aws_profile_fallback = local.aws_profile == "" ? "default" : local.aws_profile
   aws_region_fallback  = local.aws_region == "" ? "us-east-1" : local.aws_region
 
+  output_dir = local.external_vars.locals.output_dir
+
+  project_name = "holtzman-effect"
 }
 
 # Define default Terraform behavior
@@ -38,11 +40,26 @@ terraform {
   }
 }
 
+# Define generate block for Terraform backend configuration,
+# where the Terraform stores its state
+generate "backend" {
+  path = "backend.tf"
+  if_exists = "overwrite_terragrunt"
+  contents = <<EOF
+    terraform {
+      backend "local" {
+        path = "${local.output_dir}/terraform.tfstate"
+      }
+    }
+  EOF
+}
+
 # Define generate block for important configurations
-generate "setup" {
-  path      = "config.tf"
+generate "providers" {
+  path      = "providers.tf"
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
+    # Provider configuration
     provider "aws" {
       profile = "${local.aws_profile_fallback}"
       region = "${local.aws_region_fallback}"
@@ -56,7 +73,24 @@ generate "setup" {
   EOF
 }
 
-inputs = merge(
-  local.profile_vars.locals,
-  local.region_vars.locals
-)
+# Define generate block for Terraform variables
+generate "variables" {
+  path = "variables.tf"
+  if_exists = "overwrite_terragrunt"
+  contents = <<EOF
+    # The directory will contain ssh keys for the EC2 instance, OpenVPN keys,
+    # Ansible inventory file and terraform state file.
+    variable "output_dir" {
+      type = string
+      description = "Directory for artifacts"
+      default = "${local.output_dir}"
+    }
+    variable "name" {
+      type = string
+      description = "Project name"
+      default = "${local.project_name}"
+    }
+  EOF
+}
+
+inputs = merge(local.external_vars.locals)

@@ -1,4 +1,6 @@
-config.tf
+providers.tf
+backend.tf
+variables.tf
 .terraform/
 .terraform.lock.hcl
 inputs.hcl.bak
