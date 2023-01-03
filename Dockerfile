@@ -3,11 +3,11 @@
 
 # A minimal Docker image based on Alpine Linux
 # https://hub.docker.com/_/alpine/tags?name=3.17.0
-FROM alpine:3.15.0 as build
+FROM alpine:3.17.0 as build
 
-ENV TF_VER 1.1.0
+ENV TF_VER 1.3.6
 ENV TF_BASEURL https://releases.hashicorp.com/terraform
-ENV TG_VER 0.35.13
+ENV TG_VER 0.42.5
 ENV TG_BASEURL https://github.com/gruntwork-io/terragrunt/releases/download
 
 WORKDIR /build
@@ -24,7 +24,7 @@ RUN apk add --no-cache --update curl \
  && curl -Lo terragrunt ${TG_BASEURL}/v${TG_VER}/terragrunt_linux_amd64 \
  && chmod +x terraform terragrunt
 
-FROM alpine:3.15.0
+FROM alpine:3.17.0
 
 ENV USER user
 

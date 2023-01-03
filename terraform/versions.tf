@@ -1,12 +1,6 @@
-# Backend configuration for Terraform state storage
-terraform {
-  backend "local" {
-  }
-}
-
 # Required providers and their versions
 terraform {
-  required_version = "1.1.0"
+  required_version = "1.3.6"
 
   required_providers {
     aws = {
