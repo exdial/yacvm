@@ -106,4 +106,4 @@ tags
 [._]*.un~
 
 ### Custom ###
-_output/
+artifacts/
