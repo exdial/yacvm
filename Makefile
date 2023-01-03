@@ -109,7 +109,7 @@ config: logo ## 🔐 Configure AWS account credentials
 		fi ;\
 		echo
 
-	read -p "📍 Enter AWS region. Default eu-central-1 (press \"Enter\" to skip): " AWS_REGION ;\
+	read -p "📍 Enter AWS region. Default us-east-1 (press \"Enter\" to skip): " AWS_REGION ;\
 		if [ ! -z $$AWS_REGION ]; then \
 			sed -i.bak s/aws_region.*/aws_region\ =\ \"$$AWS_REGION\"/g terraform/inputs.hcl; \
 			echo AWS_REGION now is $$AWS_REGION; \

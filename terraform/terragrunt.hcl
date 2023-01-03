@@ -43,14 +43,14 @@ terraform {
 # Define generate block for Terraform backend configuration,
 # where the Terraform stores its state
 generate "backend" {
-  path = "backend.tf"
+  path      = "backend.tf"
   if_exists = "overwrite_terragrunt"
-  contents = <<EOF
-    terraform {
-      backend "local" {
-        path = "${local.output_dir}/terraform.tfstate"
-      }
-    }
+  contents  = <<EOF
+terraform {
+  backend "local" {
+    path = "${local.output_dir}/terraform.tfstate"
+  }
+}
   EOF
 }
 
@@ -59,37 +59,37 @@ generate "providers" {
   path      = "providers.tf"
   if_exists = "overwrite_terragrunt"
   contents  = <<EOF
-    # Provider configuration
-    provider "aws" {
-      profile = "${local.aws_profile_fallback}"
-      region = "${local.aws_region_fallback}"
-      insecure = false
-      default_tags {
-        tags = {
-          Terraform = "true"
-        }
-      }
+# Provider configuration
+provider "aws" {
+  profile = "${local.aws_profile_fallback}"
+  region = "${local.aws_region_fallback}"
+  insecure = false
+  default_tags {
+    tags = {
+      Terraform = "true"
     }
+  }
+}
   EOF
 }
 
 # Define generate block for Terraform variables
 generate "variables" {
-  path = "variables.tf"
+  path      = "variables.tf"
   if_exists = "overwrite_terragrunt"
-  contents = <<EOF
-    # The directory will contain ssh keys for the EC2 instance, OpenVPN keys,
-    # Ansible inventory file and terraform state file.
-    variable "output_dir" {
-      type = string
-      description = "Directory for artifacts"
-      default = "${local.output_dir}"
-    }
-    variable "name" {
-      type = string
-      description = "Project name"
-      default = "${local.project_name}"
-    }
+  contents  = <<EOF
+# The directory will contain ssh keys for the EC2 instance, OpenVPN keys,
+# Ansible inventory file and terraform state file.
+variable "output_dir" {
+  type = string
+  description = "Directory for artifacts"
+  default = "${local.output_dir}"
+}
+variable "name" {
+  type = string
+  description = "Project name"
+  default = "${local.project_name}"
+}
   EOF
 }
 

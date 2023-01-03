@@ -36,7 +36,7 @@ resource "aws_security_group_rule" "ingress_openssh" {
   to_port           = 22
   protocol          = "tcp"
   security_group_id = aws_security_group.this.id
-  cidr_blocks       = ["${chomp(data.http.myip.body)}/32"]
+  cidr_blocks       = ["${chomp(data.http.myip.response_body)}/32"]
 }
 
 # Allow all outgoing traffic
