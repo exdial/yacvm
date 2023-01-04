@@ -8,7 +8,7 @@ data "aws_ami" "ubuntu" {
   # Intel x86_64 processors, so the architecture will be amd64.
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-arm64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"]
   }
 
   # Only HVM instances can launch TUN devices.
