@@ -159,7 +159,7 @@ provision: logo
 	echo "🏝  Running Ansible playbook..."
 	echo
 	docker run --rm -v `pwd`:/code holtzman-effect sh -c \
-		"cd ansible && ansible-playbook site.yml"
+		"cd ansible && ansible-playbook main.yml"
 	echo "✅ OK..."
 	echo
 
@@ -192,7 +192,7 @@ vpnconfig: ## 🪪  Issue VPN config
 	echo "🪪 Generating VPN configuration..."
 		docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
 		holtzman-effect sh -c \
-			"cd ansible && ansible-playbook site.yml -t client -e clientname=$(OVPN_NAME)"
+			"cd ansible && ansible-playbook main.yml -t client -e clientname=$(OVPN_NAME)"
 	echo "✅ OK..."
 	echo
 
