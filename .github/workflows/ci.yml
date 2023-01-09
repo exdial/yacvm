@@ -14,6 +14,6 @@ jobs:
       - uses: terraform-linters/setup-tflint@v3.0.0
       - uses: autero1/action-terragrunt@v1.2.0
         with:
-          terragrunt_version: 0.21.13
+          terragrunt_version: 0.42.5
       - uses: actions/checkout@v3
       - uses: pre-commit/action@v3.0.0
