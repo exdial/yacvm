@@ -282,7 +282,7 @@
 
               # For extra security beyond that provided
               # by SSL/TLS, create an "HMAC firewall"
-              tls-crypt ta.key
+              tls-auth ta.key 0
 
               # Level of log file verbosity.
               #
@@ -300,14 +300,12 @@
               dh none
 
               # Other options
-              ;auth SHA256
-              ;dh none
-              ;mode server
-              ;tls-server
-              ;mssfix 1420
-              ;daemon
-              ;tls-version-min 1.2
-              ;tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
+              client-to-client
+              keepalive 15 120
+              remote-cert-tls client
+              auth SHA256
+              tls-version-min 1.2
+              tls-auth ta.key 0
             dest: /etc/openvpn/server/server.conf
             mode: 0644
           notify: Enable and start OpenVPN
@@ -364,10 +362,6 @@
               # a specific local port number.
               nobind
 
-              # Downgrade privileges after initialization (non-Windows only)
-              user nobody
-              group nogroup
-
               # Try to preserve some state across restarts.
               persist-key
               persist-tun
@@ -396,10 +390,9 @@
               verb 0
 
               # Other options
-              ;auth SHA256
-              ;key-direction 1
-              ;tls-client
-              ;mssfix 1420
+              auth SHA256
+              key-direction 1
+              remote-cert-tls server
             dest: "/home/{{ ansible_user }}/{{ clientname }}.ovpn"
             mode: 0644
 
