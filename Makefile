@@ -144,7 +144,7 @@ deploy: logo ## 💡 (re)Deploy the infrastructure
 ping: logo ## 📡 Check server reachability
 	echo "📡  Running Ansible ping..."
 	echo
-	if [ -f _output/inventory ]; then \
+	if [ -f artifacts/inventory ]; then \
 		docker run --rm -v `pwd`:/code yacvm sh -c \
 			"cd ansible && ansible all -m ping"; \
 	else \
