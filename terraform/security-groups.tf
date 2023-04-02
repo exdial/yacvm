@@ -12,7 +12,7 @@ data "http" "myip" {
 # Main security group, attached to EC2 instance
 resource "aws_security_group" "this" {
   name        = var.name
-  description = format("%s %s",var.name,"security group")
+  description = format("%s %s", var.name, "security group")
 
   tags = {
     Name = var.name
