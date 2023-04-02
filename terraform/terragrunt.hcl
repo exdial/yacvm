@@ -5,6 +5,7 @@
 # Load profile and region variables from inputs.hcl
 # and define fallback variables in case the former are missing
 locals {
+  # Top level variables
   external_vars = read_terragrunt_config("inputs.hcl")
 
   aws_profile = local.external_vars.locals.aws_profile
@@ -15,7 +16,7 @@ locals {
 
   output_dir = local.external_vars.locals.output_dir
 
-  project_name = "holtzman-effect"
+  project_name = "yacvm"
 }
 
 # Define default Terraform behavior
@@ -61,8 +62,8 @@ generate "providers" {
   contents  = <<EOF
 # Provider configuration
 provider "aws" {
-  profile = "${local.aws_profile_fallback}"
-  region = "${local.aws_region_fallback}"
+  profile  = "${local.aws_profile_fallback}"
+  region   = "${local.aws_region_fallback}"
   insecure = false
   default_tags {
     tags = {
@@ -81,14 +82,14 @@ generate "variables" {
 # The directory will contain ssh keys for the EC2 instance, OpenVPN keys,
 # Ansible inventory file and terraform state file.
 variable "output_dir" {
-  type = string
+  type        = string
   description = "Directory for artifacts"
-  default = "${local.output_dir}"
+  default     = "${local.output_dir}"
 }
 variable "name" {
-  type = string
+  type        = string
   description = "Project name"
-  default = "${local.project_name}"
+  default     = "${local.project_name}"
 }
   EOF
 }

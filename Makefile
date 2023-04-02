@@ -32,7 +32,7 @@ endif
 # Service targets (will never be called directly)
 logo:
 	clear
-	head -n 14 README.md | tail -n 13
+	head -n 9 README.md | tail -n 8
 	echo
 
 notice:
@@ -79,7 +79,7 @@ wrong-platform: logo
 	echo
 
 # 🗄️ Common targets
-install: $(TARGET) ## 🚀 Install Holtzman-effect
+install: $(TARGET) ## 🚀 Install YACVM
 uninstall: logo destroy clean ## 🗑️  Destroy deployed infrastructure
 config: logo ## 🔐 Configure AWS account credentials
 	read -p "🔐 Enter AWS Access Key ID (press \"Enter\" to skip): " AWS_ACCESS_KEY_ID ;\
@@ -121,7 +121,7 @@ config: logo ## 🔐 Configure AWS account credentials
 build: logo
 	echo "🏗  Building Docker image..."
 	echo
-	docker build -t holtzman-effect . -f Dockerfile
+	docker build -t yacvm . -f Dockerfile
 	echo "✅ OK..."
 	echo
 
@@ -129,7 +129,7 @@ dry-run: logo ## 🖇️  Dry run of infrastructure deployment (no real changes)
 	echo "🏝  Running terraform plan..."
 	echo
 	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
-		holtzman-effect sh -c "cd terraform && terragrunt plan"
+		yacvm sh -c "cd terraform && terragrunt plan"
 	echo "✅ OK..."
 	echo
 
@@ -137,7 +137,7 @@ deploy: logo ## 💡 (re)Deploy the infrastructure
 	echo "🏝  Running terraform apply..."
 	echo
 	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
-		holtzman-effect sh -c "cd terraform && terragrunt apply"
+		yacvm sh -c "cd terraform && terragrunt apply"
 	echo "✅ OK..."
 	echo
 
@@ -145,7 +145,7 @@ ping: logo ## 📡 Check server reachability
 	echo "📡  Running Ansible ping..."
 	echo
 	if [ -f _output/inventory ]; then \
-		docker run --rm -v `pwd`:/code holtzman-effect sh -c \
+		docker run --rm -v `pwd`:/code yacvm sh -c \
 			"cd ansible && ansible all -m ping"; \
 	else \
 		echo "❌ Error: ansible inventory not found"; \
@@ -158,7 +158,7 @@ ping: logo ## 📡 Check server reachability
 provision: logo
 	echo "🏝  Running Ansible playbook..."
 	echo
-	docker run --rm -v `pwd`:/code holtzman-effect sh -c \
+	docker run --rm -v `pwd`:/code yacvm sh -c \
 		"cd ansible && ansible-playbook main.yml"
 	echo "✅ OK..."
 	echo
@@ -167,7 +167,7 @@ destroy: logo
 	echo "🗑️  Destroying deployed infrastructure..."
 	echo
 	docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
-		holtzman-effect sh -c "cd terraform && terragrunt destroy"
+		yacvm sh -c "cd terraform && terragrunt destroy"
 	echo "✅ OK..."
 	echo
 
@@ -191,7 +191,7 @@ endif
 vpnconfig: ## 🪪  Issue VPN config
 	echo "🪪 Generating VPN configuration..."
 		docker run --rm -v `pwd`:/code -v $$HOME/.aws:/home/user/.aws \
-		holtzman-effect sh -c \
+		yacvm sh -c \
 			"cd ansible && ansible-playbook main.yml -t client -e clientname=$(OVPN_NAME)"
 	echo "✅ OK..."
 	echo

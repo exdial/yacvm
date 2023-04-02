@@ -1,28 +1,25 @@
 ```
-██╗  ██╗ ██████╗ ██╗  ████████╗███████╗███╗   ███╗ █████╗ ███╗   ██╗
-██║  ██║██╔═══██╗██║  ╚══██╔══╝╚══███╔╝████╗ ████║██╔══██╗████╗  ██║
-███████║██║   ██║██║     ██║     ███╔╝ ██╔████╔██║███████║██╔██╗ ██║
-██╔══██║██║   ██║██║     ██║    ███╔╝  ██║╚██╔╝██║██╔══██║██║╚██╗██║
-██║  ██║╚██████╔╝███████╗██║   ███████╗██║ ╚═╝ ██║██║  ██║██║ ╚████║
-╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝
 
-        ███████╗███████╗███████╗███████╗ ██████╗████████╗
-        ██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝╚══██╔══╝
-        █████╗  █████╗  █████╗  █████╗  ██║        ██║
-        ██╔══╝  ██╔══╝  ██╔══╝  ██╔══╝  ██║        ██║
-        ███████╗██║     ██║     ███████╗╚██████╗   ██║
-        ╚══════╝╚═╝     ╚═╝     ╚══════╝ ╚═════╝   ╚═╝
+██╗   ██╗ █████╗  ██████╗██╗   ██╗███╗   ███╗
+╚██╗ ██╔╝██╔══██╗██╔════╝██║   ██║████╗ ████║
+ ╚████╔╝ ███████║██║     ██║   ██║██╔████╔██║
+  ╚██╔╝  ██╔══██║██║     ╚██╗ ██╔╝██║╚██╔╝██║
+   ██║   ██║  ██║╚██████╗ ╚████╔╝ ██║ ╚═╝ ██║
+   ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚═══╝  ╚═╝     ╚═╝
+
 ```
 
-[![CI](https://github.com/repconn/holtzman-effect/actions/workflows/ci.yml/badge.svg)](https://github.com/repconn/holtzman-effect/actions/workflows/ci.yml)
+[![CI](https://github.com/repconn/yacvm/actions/workflows/ci.yml/badge.svg)](https://github.com/repconn/yacvm/actions/workflows/ci.yml)
 
 
 # Abstract
 
+**YACVM** stands for **Y**et **A**nother **C**LI **V**PN **M**anager
+
 > Do you have an AWS account and want your own VPN server,
 > but you don't like infrastructure?
 
-*Holtzman Effect* help you to *Run your own private VPN server on AWS from scratch*
+*YACVM* help you to *Run your own private VPN server on AWS from scratch*
 
 * Built from scratch, no predefined images
 * Completely private
@@ -30,7 +27,7 @@
 
 ## What is inside
 
-Holtzman Effect is a collection of open source tools such as Terraform, Terragrunt,
+YACVM is a collection of open source tools such as Terraform, Terragrunt,
 Ansible, Docker and OpenVPN that are glued together by a Makefile and are always
 ready to provide you a full-fledged, enterprise grade VPN server.
 

@@ -1,4 +1,4 @@
-# Randomize VPN port
+# Randomize OpenVPN port
 resource "random_integer" "this" {
   min = 1024
   max = 65535
@@ -6,13 +6,13 @@ resource "random_integer" "this" {
 
 # Get current IP address
 data "http" "myip" {
-  url = "https://ifconfig.co"
+  url = "https://ipecho.net/plain"
 }
 
 # Main security group, attached to EC2 instance
 resource "aws_security_group" "this" {
-  name        = var.name
-  description = "Holtzman-effect security group"
+  name         = var.name
+  description  = format("%s %s",var.name,"security group")
 
   tags = {
     Name = var.name
@@ -22,6 +22,7 @@ resource "aws_security_group" "this" {
 # Allow to connect to randomized OpenVPN UDP port from anywhere
 resource "aws_security_group_rule" "ingress_openvpn" {
   type              = "ingress"
+  description       = "OpenVPN Ingress"
   from_port         = random_integer.this.result
   to_port           = random_integer.this.result
   protocol          = "udp"
@@ -32,6 +33,7 @@ resource "aws_security_group_rule" "ingress_openvpn" {
 # Allow to connect SSH from current IP
 resource "aws_security_group_rule" "ingress_openssh" {
   type              = "ingress"
+  description       = "SSH Ingress"
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
@@ -42,6 +44,7 @@ resource "aws_security_group_rule" "ingress_openssh" {
 # Allow all outgoing traffic
 resource "aws_security_group_rule" "egress" {
   type              = "egress"
+  description       = "Default Egress"
   from_port         = 0
   to_port           = 0
   protocol          = "-1"
