@@ -8,18 +8,13 @@ ifndef DEBUG
 .SILENT:
 endif
 
-# Load variables from external file to show them in the main menu
-AWS_PROFILE				:= $(shell grep aws_profile terraform/inputs.hcl \
-						| awk '{print $$3}' | tr -d '"')
-AWS_REGION				:= $(shell grep aws_region terraform/inputs.hcl \
-						| awk '{print $$3}' | tr -d '"')
-AWS_ACCESS_KEY_ID		:= $(shell grep aws_access_key_id terraform/inputs.hcl \
-						| awk '{print $$3}' | tr -d '"')
-AWS_SECRET_ACCESS_KEY	:= $(shell grep aws_secret_access_key terraform/inputs.hcl \
-						| awk '{print $$3}' | tr -d '"')
+# Load variables from terraform/inputs.hcl to show them in the main menu
+AWS_PROFILE := $(shell grep aws_profile terraform/inputs.hcl | cut -d '"' -f2)
+AWS_REGION := $(shell grep aws_region terraform/inputs.hcl | cut -d '"' -f2)
+AWS_ACCESS := $(shell grep aws_access terraform/inputs.hcl | cut -d '"' -f2)
+AWS_USE_SPOT := $(shell grep aws_use_spot terraform/inputs.hcl | cut -d '"' -f2)
 
-# General process:
-# testenv(mac or linux) ▶️ build program ▶️ deploy infra ▶️ provision server ▶️ cleanup 
+# Detect OS
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
     TARGET = check-mac build deploy provision clean
@@ -36,10 +31,10 @@ logo:
 	echo
 
 notice:
-	echo "🔐 Loaded AWS access key: $(AWS_ACCESS_KEY_ID)"
-	echo "🔑 Loaded AWS secret key: 🙉🙊🙈"
-	echo "👨 Loaded AWS profile: $(AWS_PROFILE)"
-	echo "📍 Loaded AWS region: $(AWS_REGION)"
+	[ "${AWS_PROFILE}" ] && echo "🪪 AWS profile in use: $(AWS_PROFILE)" || true
+	[ "${AWS_REGION}" ] && echo "📍 AWS region in use: $(AWS_REGION)" || true
+	[ "${AWS_ACCESS}" ] && echo "🔑 AWS access key id in use: $(AWS_ACCESS)" || true
+	[ "${AWS_USE_SPOT}" == true ] && echo "☁️  AWS capacity type: spot" || echo "☁️  AWS capacity type: on-demand" 
 	echo
 	echo "➤ Run \"make config\" to configure AWS account"
 	echo "(or directly edit file terraform/inputs.hcl)"
@@ -75,46 +70,54 @@ check-linux: logo
 	echo
 
 wrong-platform: logo
-	echo "❌ Error: Wrong platform (only Mac and Linux supported)"
+	echo "❌ Error: Wrong platform (only Mac and Linux are supported)"
 	echo
 
 # 🗄️ Common targets
 install: $(TARGET) ## 🚀 Install YACVM
 uninstall: logo destroy clean ## 🗑️  Destroy deployed infrastructure
 config: logo ## 🔐 Configure AWS account credentials
-	read -p "🔐 Enter AWS Access Key ID (press \"Enter\" to skip): " AWS_ACCESS_KEY_ID ;\
-		if [ ! -z $$AWS_ACCESS_KEY_ID ]; then \
-			sed -i.bak s/aws_access_key_id.*/aws_access_key_id\ =\ \"$$AWS_ACCESS_KEY_ID\"/g terraform/inputs.hcl; \
-			echo AWS_ACCESS_KEY_ID now is $$AWS_ACCESS_KEY_ID; \
-		else \
-			echo AWS_ACCESS_KEY_ID unchanged; \
-		fi ;\
-		echo
-
-	read -p "🔑 Enter AWS Secret Access Key (press \"Enter\" to skip): " AWS_SECRET_ACCESS_KEY ;\
-		if [ ! -z $$AWS_SECRET_ACCESS_KEY_ID ]; then \
-			sed -i.bak s/aws_secret_access_key.*/aws_secret_access_key\ =\ \"$$AWS_SECRET_ACCESS_KEY\"/g terraform/inputs.hcl; \
-			echo AWS_SECRET_ACCESS_KEY now is $$AWS_SECRET_ACCESS_KEY; \
-		else \
-			echo AWS_SECRET_ACCESS_KEY unchanged; \
-		fi ;\
-		echo
-
-	read -p "👨 Enter AWS profile (press \"Enter\" to skip): " AWS_PROFILE ;\
+	read -p "🪪 Enter AWS Profile (press \"Enter\" to skip): " AWS_PROFILE ;\
 		if [ ! -z $$AWS_PROFILE ]; then \
 			sed -i.bak s/aws_profile.*/aws_profile\ =\ \"$$AWS_PROFILE\"/g terraform/inputs.hcl; \
-			echo AWS_PROFILE now is $$AWS_PROFILE; \
+			echo AWS Profile now is $$AWS_PROFILE; \
 		else \
-			echo AWS_PROFILE unchanged; \
+			echo AWS Profile unchanged; \
 		fi ;\
 		echo
 
-	read -p "📍 Enter AWS region. Default us-east-1 (press \"Enter\" to skip): " AWS_REGION ;\
+	read -p "📍 Enter AWS Region. Default us-east-1 (press \"Enter\" to skip): " AWS_REGION ;\
 		if [ ! -z $$AWS_REGION ]; then \
 			sed -i.bak s/aws_region.*/aws_region\ =\ \"$$AWS_REGION\"/g terraform/inputs.hcl; \
-			echo AWS_REGION now is $$AWS_REGION; \
+			echo AWS Region now is $$AWS_REGION; \
 		else \
-			echo AWS_REGION unchanged; \
+			echo AWS Region unchanged; \
+		fi ;\
+		echo
+
+	read -p "🔑 Enter AWS Access Key ID (press \"Enter\" to skip): " AWS_ACCESS ;\
+		if [ ! -z $$AWS_ACCESS ]; then \
+			sed -i.bak s/aws_access_key_id.*/aws_access_key_id\ =\ \"$$AWS_ACCESS\"/g terraform/inputs.hcl; \
+			echo AWS Access Key ID now is $$AWS_ACCESS; \
+		else \
+			echo AWS Access Key ID unchanged; \
+		fi ;\
+		echo
+
+	read -p "🔐 Enter AWS Secret Access Key (press \"Enter\" to skip): " AWS_SECRET ;\
+		if [ ! -z $$AWS_SECRET ]; then \
+			sed -i.bak s/aws_secret_access_key.*/aws_secret_access_key\ =\ \"$$AWS_SECRET\"/g terraform/inputs.hcl; \
+			echo AWS Secret Access Key now is $$AWS_SECRET; \
+		else \
+			echo AWS Secret Access Key unchanged; \
+		fi ;\
+		echo
+
+	read -p "☁️  Would you like to use AWS spot instances [true|false]? (press \"Enter\" to skip): " AWS_USE_SPOT ;\
+		if [ ! -z $$AWS_USE_SPOT ]; then \
+			sed -i.bak s/aws_use_spot.*/aws_use_spot\ =\ \"$$AWS_USE_SPOT\"/g terraform/inputs.hcl; \
+		else \
+			echo AWS capacity type unchanged; \
 		fi ;\
 		echo
 

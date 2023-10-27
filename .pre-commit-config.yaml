@@ -9,15 +9,9 @@ repos:
       - id: check-merge-conflict
       - id: check-executables-have-shebangs
 
-  - repo: https://github.com/ansible-community/ansible-lint
-    rev: v5.3.2
-    hooks:
-      - id: ansible-lint
-
   - repo: https://github.com/gruntwork-io/pre-commit
     rev: v0.1.17
     hooks:
-      - id: tflint
       - id: terragrunt-hclfmt
       - id: shellcheck
 

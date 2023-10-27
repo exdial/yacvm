@@ -5,9 +5,9 @@
 # https://hub.docker.com/_/alpine/tags?name=3.17.0
 FROM alpine:3.17.0 as build
 
-ENV TF_VER 1.3.6
+ENV TF_VER 1.5.5
 ENV TF_BASEURL https://releases.hashicorp.com/terraform
-ENV TG_VER 0.42.5
+ENV TG_VER 0.52.3
 ENV TG_BASEURL https://github.com/gruntwork-io/terragrunt/releases/download
 
 WORKDIR /build
