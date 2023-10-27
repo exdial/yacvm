@@ -1,6 +1,12 @@
 # Randomize OpenVPN port
-resource "random_integer" "this" {
+resource "random_integer" "openvpn" {
   min = 1024
+  max = 32765
+}
+
+# Randomize Wireguard port
+resource "random_integer" "wireguard" {
+  min = 32766
   max = 65535
 }
 
@@ -22,9 +28,20 @@ resource "aws_security_group" "this" {
 # Allow to connect to randomized OpenVPN UDP port from anywhere
 resource "aws_security_group_rule" "ingress_openvpn" {
   type              = "ingress"
-  description       = "OpenVPN Ingress"
-  from_port         = random_integer.this.result
-  to_port           = random_integer.this.result
+  description       = "OpenVPN incoming"
+  from_port         = random_integer.openvpn.result
+  to_port           = random_integer.openvpn.result
+  protocol          = "udp"
+  security_group_id = aws_security_group.this.id
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+# Allow to connect to randomized Wireguard UDP port from anywhere
+resource "aws_security_group_rule" "ingress_wireguard" {
+  type              = "ingress"
+  description       = "Wireguard incoming"
+  from_port         = random_integer.wireguard.result
+  to_port           = random_integer.wireguard.result
   protocol          = "udp"
   security_group_id = aws_security_group.this.id
   cidr_blocks       = ["0.0.0.0/0"]
@@ -33,7 +50,7 @@ resource "aws_security_group_rule" "ingress_openvpn" {
 # Allow to connect SSH from current IP
 resource "aws_security_group_rule" "ingress_openssh" {
   type              = "ingress"
-  description       = "SSH Ingress"
+  description       = "SSH incoming"
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
@@ -44,7 +61,7 @@ resource "aws_security_group_rule" "ingress_openssh" {
 # Allow all outgoing traffic
 resource "aws_security_group_rule" "egress" {
   type              = "egress"
-  description       = "Default Egress"
+  description       = "Default outgoing"
   from_port         = 0
   to_port           = 0
   protocol          = "-1"

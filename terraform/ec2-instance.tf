@@ -23,7 +23,7 @@ data "aws_ami" "ubuntu" {
 # Define EC2 instance
 resource "aws_instance" "this" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t4g.nano" # https://ec2instances.info/
+  instance_type = "t4g.nano" # https://instances.vantage.sh/
   key_name      = aws_key_pair.this.key_name
 
   root_block_device {

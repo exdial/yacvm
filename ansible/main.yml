@@ -37,7 +37,7 @@
             dest: /etc/resolv.conf
             owner: root
             group: root
-            mode: 0644
+            mode: "0644"
 
         - name: 🛠️ Ensure `/etc/hosts` is configured
           become: true
@@ -48,7 +48,7 @@
             dest: /etc/hosts
             owner: root
             group: root
-            mode: 0644
+            mode: "0644"
 
         - name: 🛠️ Ensure hostname is correct
           become: true
@@ -107,7 +107,7 @@
               -A POSTROUTING -s 10.8.0.0/8 -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
               COMMIT
             dest: /etc/network/if-up.d/iptables-rules
-            mode: 0755
+            mode: "0755"
           notify: Apply firewall rules
 
     - name: 👨‍⚖️ Certificate Authority setup block
@@ -117,7 +117,7 @@
           ansible.builtin.file:
             path: "/home/{{ ansible_user }}/easy-rsa"
             state: directory
-            mode: 0755
+            mode: "0755"
             owner: "{{ ansible_user }}"
             group: "{{ ansible_user }}"
 
@@ -152,7 +152,7 @@
               set_var EASYRSA_REQ_ALGO "ec"
               set_var EASYRSA_REQ_DIGEST "sha512"
             dest: "/home/{{ ansible_user }}/easy-rsa/vars"
-            mode: 0644
+            mode: "0644"
 
         - name: 👨‍⚖️ Ensure CA certificate exists
           ansible.builtin.command:
@@ -164,7 +164,7 @@
           ansible.builtin.copy:
             src: "/home/{{ ansible_user }}/pki/ca.crt"
             dest: /etc/openvpn/server/
-            mode: 0644
+            mode: "0644"
             remote_src: true
 
     - name: 📜 Server Certificate Request and Private Key
@@ -193,7 +193,7 @@
           ansible.builtin.copy:
             src: "{{ item }}"
             dest: /etc/openvpn/server/
-            mode: 0600
+            mode: "0600"
             remote_src: true
           with_items:
             - "/home/{{ ansible_user }}/pki/private/server.key"
@@ -307,7 +307,7 @@
               tls-version-min 1.2
               tls-auth ta.key 0
             dest: /etc/openvpn/server/server.conf
-            mode: 0644
+            mode: "0644"
           notify: Enable and start OpenVPN
 
     - name: 🪪 Client Certificates
@@ -394,7 +394,7 @@
               key-direction 1
               remote-cert-tls server
             dest: "/home/{{ ansible_user }}/{{ clientname }}.ovpn"
-            mode: 0644
+            mode: "0644"
 
         # Injecting ca.crt, client.crt, client.key and ta.key into client.ovpn
         # ca.crt

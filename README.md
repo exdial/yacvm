@@ -9,7 +9,7 @@
 
 ```
 
-[![CI](https://github.com/repconn/yacvm/actions/workflows/ci.yml/badge.svg)](https://github.com/repconn/yacvm/actions/workflows/ci.yml)
+[![CI](https://github.com/exdial/yacvm/actions/workflows/ci.yml/badge.svg)](https://github.com/exdial/yacvm/actions/workflows/ci.yml)
 
 
 # Abstract
