@@ -3,12 +3,12 @@
   hosts: all
   gather_facts: false
   tasks:
-    - name: ⚖️ Ensure variable openvpn_port is a number
+    - name: Ensure variable openvpn_port is a number
       ansible.builtin.assert:
         that:
           - openvpn_port is regex("^[0-9]+$")
 
-    - name: ⏱️ Ensure server is up and running
+    - name: Ensure server is up and running
       ansible.builtin.wait_for_connection:
         timeout: 600
 
@@ -19,15 +19,15 @@
     # Feel free to change from UDP to TCP
     openvpn_proto: udp
     openvpn_key_size: 2048
-    ovpn_conf_out_dir: "../artifacts"
+    ovpn_conf_out_dir: "../out"
   # Tell easyrsa to be non-interactive
   environment:
     EASYRSA_BATCH: "1"
   tasks:
-    - name: 🛠️ Server setup
+    - name: Server setup
       tags: setup
       block:
-        - name: 🛠️ Ensure `/etc/resolv.conf` is configured
+        - name: Ensure `/etc/resolv.conf` is configured
           become: true
           ansible.builtin.copy:
             content: |
@@ -39,7 +39,7 @@
             group: root
             mode: "0644"
 
-        - name: 🛠️ Ensure `/etc/hosts` is configured
+        - name: Ensure `/etc/hosts` is configured
           become: true
           ansible.builtin.copy:
             content: |
@@ -50,12 +50,12 @@
             group: root
             mode: "0644"
 
-        - name: 🛠️ Ensure hostname is correct
+        - name: Ensure hostname is correct
           become: true
           ansible.builtin.hostname:
             name: "{{ inventory_hostname }}"
 
-        - name: 🛠️ Ensure required packages installed
+        - name: Ensure required packages installed
           become: true
           ansible.builtin.apt:
             name: "{{ item.name }}"
@@ -67,7 +67,7 @@
             - {name: openvpn, state: present}
             - {name: easy-rsa, state: present}
 
-        - name: 🛠️ Ensure sysctl entries are set
+        - name: Ensure sysctl entries are set
           become: true
           ansible.posix.sysctl:
             name: "{{ item }}"
@@ -82,7 +82,7 @@
             - net.ipv6.conf.lo.disable_ipv6
             - net.ipv6.conf.{{ ansible_default_ipv4.interface }}.disable_ipv6
 
-        - name: 🛠️ Ensure firewall rules are set
+        - name: Ensure firewall rules are set
           become: true
           ansible.builtin.copy:
             content: |
@@ -110,10 +110,10 @@
             mode: "0755"
           notify: Apply firewall rules
 
-    - name: 👨‍⚖️ Certificate Authority setup block
+    - name: Certificate Authority setup block
       tags: genca
       block:
-        - name: 👨‍⚖️ Ensure Public Key Infrastructure directory exists
+        - name: Ensure Public Key Infrastructure directory exists
           ansible.builtin.file:
             path: "/home/{{ ansible_user }}/easy-rsa"
             state: directory
@@ -121,7 +121,7 @@
             owner: "{{ ansible_user }}"
             group: "{{ ansible_user }}"
 
-        - name: 👨‍⚖️ Ensure required symlinks are exists
+        - name: Ensure required symlinks are exists
           become: true
           ansible.builtin.file:
             src: "/usr/share/easy-rsa/{{ item }}"
@@ -135,12 +135,12 @@
             - vars.example
             - x509-types
 
-        - name: 👨‍⚖️ Ensure PKI initialized
+        - name: Ensure PKI initialized
           ansible.builtin.command:
             cmd: "/home/{{ ansible_user }}/easy-rsa/easyrsa init-pki"
             creates: "/home/{{ ansible_user }}/pki/"
 
-        - name: 👨‍⚖️ Ensure OpenVPN VARS file configured
+        - name: Ensure OpenVPN VARS file configured
           ansible.builtin.copy:
             content: |
               set_var EASYRSA_REQ_COUNTRY "US"
@@ -154,12 +154,12 @@
             dest: "/home/{{ ansible_user }}/easy-rsa/vars"
             mode: "0644"
 
-        - name: 👨‍⚖️ Ensure CA certificate exists
+        - name: Ensure CA certificate exists
           ansible.builtin.command:
             cmd: "/home/{{ ansible_user }}/easy-rsa/easyrsa build-ca nopass"
             creates: "/home/{{ ansible_user }}/pki/ca.crt"
 
-        - name: 👨‍⚖️ Ensure CA certificate is in OpenVPN directory
+        - name: Ensure CA certificate is in OpenVPN directory
           become: true
           ansible.builtin.copy:
             src: "/home/{{ ansible_user }}/pki/ca.crt"
@@ -167,7 +167,7 @@
             mode: "0644"
             remote_src: true
 
-    - name: 📜 Server Certificate Request and Private Key
+    - name: Server Certificate Request and Private Key
       tags: genserver
       block:
         - name: Check whether the files exist
@@ -178,17 +178,17 @@
             - "/home/{{ ansible_user }}/pki/reqs/server.req"
           register: server_certs_stat
 
-        - name: 📜 Running gen-req
+        - name: Running gen-req
           ansible.builtin.command:
             cmd: "/home/{{ ansible_user }}/easy-rsa/easyrsa gen-req server nopass"
           when: server_certs_stat.results | rejectattr('stat.exists') | list
 
-        - name: 📜 Signing the OpenVPN Server's Certificate Request
+        - name: Signing the OpenVPN Server's Certificate Request
           ansible.builtin.command:
             cmd: "/home/{{ ansible_user }}/easy-rsa/easyrsa sign-req server server"
             creates: "/home/{{ ansible_user }}/pki/issued/server.crt"
 
-        - name: 📜 Ensure server certificates are in OpenVPN directory
+        - name: Ensure server certificates are in OpenVPN directory
           become: true
           ansible.builtin.copy:
             src: "{{ item }}"
@@ -199,17 +199,17 @@
             - "/home/{{ ansible_user }}/pki/private/server.key"
             - "/home/{{ ansible_user }}/pki/issued/server.crt"
 
-        - name: 📜 Configuring OpenVPN Cryptographic Material
+        - name: Configuring OpenVPN Cryptographic Material
           become: true
           ansible.builtin.command:
             cmd: openvpn --genkey --secret ta.key
             chdir: /etc/openvpn/server/
             creates: /etc/openvpn/server/ta.key
 
-    - name: 📄 Configuring OpenVPN
+    - name: Configuring OpenVPN
       tags: configserver
       block:
-        - name: 📄 Ensure OpenVPN server config exists
+        - name: Ensure OpenVPN server config exists
           become: true
           ansible.builtin.copy:
             content: |
@@ -310,27 +310,27 @@
             mode: "0644"
           notify: Enable and start OpenVPN
 
-    - name: 🪪 Client Certificates
+    - name: Client Certificates
       when: clientname is defined
       tags: client
       block:
-        - name: 🪪 Generating a Client Certificate and Key Pair
+        - name: Generating a Client Certificate and Key Pair
           ansible.builtin.command:
             cmd: "/home/{{ ansible_user }}/easy-rsa/easyrsa gen-req {{ clientname }} nopass"
             creates:
               - "/home/{{ ansible_user }}/pki/private/{{ clientname }}.key"
               - "/home/{{ ansible_user }}/pki/reqs/{{ clientname }}.req"
 
-        - name: 🪪 Sign the Client Certificate request
+        - name: Sign the Client Certificate request
           ansible.builtin.command:
             cmd: "/home/{{ ansible_user }}/easy-rsa/easyrsa sign-req client {{ clientname }}"
             creates: "/home/{{ ansible_user }}/pki/issued/{{ clientname }}.crt"
 
-        - name: 🪪 Getting a public IP
+        - name: Getting a public IP
           community.general.ipify_facts:
 
         # client.ovpn
-        - name: 🪪 Generating a OpenVPN client config
+        - name: Generating a OpenVPN client config
           ansible.builtin.copy:
             content: |
               ########################################
@@ -398,12 +398,12 @@
 
         # Injecting ca.crt, client.crt, client.key and ta.key into client.ovpn
         # ca.crt
-        - name: 🍜 Slurp ca.crt
+        - name: Slurp ca.crt
           ansible.builtin.slurp:
             src: "/home/{{ ansible_user }}/pki/ca.crt"
           register: cacrt
 
-        - name: 💉 Injecting ca.crt into final user configuration file
+        - name: Injecting ca.crt into final user configuration file
           ansible.builtin.blockinfile:
             path: "/home/{{ ansible_user }}/{{ clientname }}.ovpn"
             insertafter: "<ca>"
@@ -413,12 +413,12 @@
             marker_end: End
 
         # client.crt
-        - name: 🍜 Slurp client.crt
+        - name: Slurp client.crt
           ansible.builtin.slurp:
             src: "/home/{{ ansible_user }}/pki/issued/{{ clientname }}.crt"
           register: clientcrt
 
-        - name: 💉 Injecting client.crt into final user configuration file
+        - name: Injecting client.crt into final user configuration file
           ansible.builtin.blockinfile:
             path: "/home/{{ ansible_user }}/{{ clientname }}.ovpn"
             insertafter: "<cert>"
@@ -428,12 +428,12 @@
             marker_end: End
 
         # client.key
-        - name: 🍜 Slurp client.key
+        - name: Slurp client.key
           ansible.builtin.slurp:
             src: "/home/{{ ansible_user }}/pki/private/{{ clientname }}.key"
           register: clientkey
 
-        - name: 💉 Injecting client.key into final user configuration file
+        - name: Injecting client.key into final user configuration file
           ansible.builtin.blockinfile:
             path: "/home/{{ ansible_user }}/{{ clientname }}.ovpn"
             insertafter: "<key>"
@@ -443,13 +443,13 @@
             marker_end: End
 
         # ta.key
-        - name: 🍜 Slurp ta.key
+        - name: Slurp ta.key
           become: true
           ansible.builtin.slurp:
             src: /etc/openvpn/server/ta.key
           register: takey
 
-        - name: 💉 Injecting ta.key into final user configuration file
+        - name: Injecting ta.key into final user configuration file
           ansible.builtin.blockinfile:
             path: "/home/{{ ansible_user }}/{{ clientname }}.ovpn"
             insertafter: "<tls-auth>"
@@ -458,13 +458,13 @@
             marker_begin: Begin
             marker_end: End
 
-        - name: 📥 Getting an OpenVPN config file
+        - name: Getting an OpenVPN config file
           ansible.builtin.fetch:
             src: "/home/{{ ansible_user }}/{{ clientname }}.ovpn"
             dest: "{{ ovpn_conf_out_dir }}/{{ clientname }}.ovpn"
             flat: true
 
-        - name: 🧹 Cleanup remote server
+        - name: Cleanup remote server
           ansible.builtin.file:
             path: "/home/{{ ansible_user }}/{{ clientname }}.ovpn"
             state: absent
